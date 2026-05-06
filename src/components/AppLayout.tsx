@@ -1,4 +1,4 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Inbox, LayoutDashboard, Users, MessageCircle } from "lucide-react";
 
 const nav = [
@@ -7,7 +7,7 @@ const nav = [
   { to: "/contacts", label: "Contacts", icon: Users },
 ];
 
-export function AppLayout() {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <div className="flex min-h-screen w-full bg-white text-slate-900">
@@ -61,7 +61,7 @@ export function AppLayout() {
       </nav>
 
       <main className="flex-1 min-w-0 pb-16 md:pb-0">
-        <Outlet />
+        {children}
       </main>
     </div>
   );
