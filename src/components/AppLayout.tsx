@@ -104,10 +104,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           })}
 
           <div className="px-3 pt-6 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">System</div>
-          <button className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-white/[0.04] hover:text-white transition-all">
+          <Link
+            to="/settings"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+              pathname.startsWith("/settings")
+                ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
+                : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
+            }`}
+          >
             <Settings className="h-[18px] w-[18px]" />
             Settings
-          </button>
+          </Link>
         </nav>
 
         {/* Profile */}
