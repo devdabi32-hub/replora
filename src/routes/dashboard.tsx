@@ -184,7 +184,7 @@ function DashboardPage() {
             {topContacts.map((c, i) => {
               const initial = c.phone.replace(/\D/g, "").slice(-1) || "#";
               return (
-                <Link key={c.phone} to="/" search={{ phone: c.phone } as never} className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                <Link key={c.phone} to="/inbox" search={{ phone: c.phone } as never} className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
                   <span className="text-xs font-bold text-slate-400 w-5">#{i + 1}</span>
                   <div className={`h-9 w-9 rounded-full bg-gradient-to-br ${avatarColor(c.phone)} text-white flex items-center justify-center text-sm font-semibold`}>{initial}</div>
                   <div className="flex-1 min-w-0">

@@ -130,7 +130,7 @@ function ContactsPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button
-                        onClick={() => navigate({ to: "/", search: { phone: c.phone } as never })}
+                        onClick={() => navigate({ to: "/inbox", search: { phone: c.phone } as never })}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-[#0084ff] hover:text-white transition-colors"
                       >
                         View Chat <ArrowRight className="h-3 w-3" />
