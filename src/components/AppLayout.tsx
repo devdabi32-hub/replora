@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +11,31 @@ const nav = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const [inboxCount, setInboxCount] = useState<number>(0);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        navigate({ to: "/login" });
+      } else {
+        setUserEmail(data.session.user.email ?? "admin@wamonitor.io");
+        setAuthChecked(true);
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session) navigate({ to: "/login" });
+      else setUserEmail(session.user.email ?? "");
+    });
+    return () => { sub.subscription.unsubscribe(); };
+  }, [navigate]);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -28,6 +52,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
+
+  if (!authChecked) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-500 text-sm">Loading…</div>;
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-[#f8fafc] text-slate-900">
@@ -93,9 +121,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-white truncate">Admin</div>
-              <div className="text-[11px] text-slate-500 truncate">admin@wamonitor.io</div>
+              <div className="text-[11px] text-slate-500 truncate">{userEmail}</div>
             </div>
-            <LogOut className="h-4 w-4 text-slate-500" />
+            <button onClick={signOut} title="Sign out" className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>
