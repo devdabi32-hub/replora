@@ -22,7 +22,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setError(error.message);
-    navigate({ to: "/" });
+    navigate({ to: "/inbox" });
   };
 
   return (

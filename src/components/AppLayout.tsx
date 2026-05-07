@@ -4,7 +4,7 @@ import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut } from "
 import { supabase } from "@/lib/supabase";
 
 const nav = [
-  { to: "/", label: "Inbox", icon: Inbox, key: "inbox" },
+  { to: "/inbox", label: "Inbox", icon: Inbox, key: "inbox" },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, key: "dashboard" },
   { to: "/contacts", label: "Contacts", icon: Users, key: "contacts" },
 ];
@@ -79,7 +79,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Main</div>
           {nav.map((n) => {
             const Icon = n.icon;
-            const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
+            const active = pathname.startsWith(n.to);
             return (
               <Link
                 key={n.to}
@@ -141,7 +141,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0f1117] text-slate-300 flex justify-around py-2 border-t border-white/10">
         {nav.map((n) => {
           const Icon = n.icon;
-          const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
+          const active = pathname.startsWith(n.to);
           return (
             <Link key={n.to} to={n.to} className={`flex flex-col items-center text-[11px] px-3 py-1 ${active ? "text-[#0084ff]" : ""}`}>
               <Icon className="h-5 w-5" />

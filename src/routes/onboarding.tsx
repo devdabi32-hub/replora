@@ -56,7 +56,7 @@ function OnboardingPage() {
             <p className="text-sm text-blue-800">Paste this URL in your n8n HTTP Request node to start sending WhatsApp messages to your monitoring portal.</p>
           </div>
 
-          <button onClick={() => navigate({ to: "/" })}
+          <button onClick={() => navigate({ to: "/inbox" })}
             className="w-full mt-6 h-11 rounded-lg bg-[#0f1117] hover:bg-slate-800 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors">
             Go to my inbox <ArrowRight className="h-4 w-4" />
           </button>
