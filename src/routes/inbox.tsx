@@ -5,7 +5,7 @@ import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import { Search, Bot, Phone, Video, MoreVertical, Smile, Paperclip, Send, CheckCheck } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/inbox")({
   component: Index,
 });
 
