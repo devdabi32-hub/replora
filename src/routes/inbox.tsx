@@ -1,115 +1,108 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { formatDistanceToNow, format, isToday, differenceInHours } from "date-fns";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import {
-  Search,
-  Bot,
-  Phone,
-  Video,
-  MoreVertical,
-  Smile,
-  Paperclip,
-  Send,
-  CheckCheck,
-  Star,
-  Filter,
-  ListFilter,
+  Search, Phone, Video, MoreVertical, Smile, Paperclip, Send,
+  CheckCheck, Star, Trash2, StickyNote, Lock, MessageCircle, X, ArrowLeft,
 } from "lucide-react";
 
-export const Route = createFileRoute("/inbox")({
-  component: Index,
-});
+export const Route = createFileRoute("/inbox")({ component: Index });
 
-function Index() {
-  return (
-    <AppLayout>
-      <InboxPage />
-    </AppLayout>
-  );
-}
+function Index() { return <AppLayout><InboxPage /></AppLayout>; }
 
 type Category = "hot" | "warm" | "cold";
-type FilterKey = "all" | Category;
-
+type FilterKey = "all" | "important" | Category;
+type Note = { text: string; created_at: string };
+type Contact = {
+  phone_number: string;
+  is_important: boolean;
+  lead_category: Category | null;
+  notes: Note[];
+};
 type Conversation = {
   phone_number: string;
   last: Message;
   count: number;
   unread: number;
   activeToday: boolean;
-  category: Category;
+  autoCategory: Category;
+  category: Category | null;
+  isImportant: boolean;
+  notes: Note[];
   lastInboundAt: Date | null;
 };
 
-const CATEGORY_META: Record<Category, { label: string; emoji: string; classes: string }> = {
-  hot: { label: "Hot", emoji: "🔥", classes: "bg-red-50 text-red-600 border-red-200" },
-  warm: { label: "Warm", emoji: "🟡", classes: "bg-amber-50 text-amber-700 border-amber-200" },
-  cold: { label: "Cold", emoji: "🔵", classes: "bg-sky-50 text-sky-700 border-sky-200" },
+const CAT: Record<Category, { label: string; emoji: string; cls: string; activeCls: string; dot: string }> = {
+  hot:  { label: "Hot",  emoji: "🔥", cls: "bg-red-500/15 text-red-300 border-red-500/30",       activeCls: "bg-red-500 text-white border-red-500",       dot: "bg-red-500" },
+  warm: { label: "Warm", emoji: "🟡", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30", activeCls: "bg-amber-500 text-white border-amber-500",   dot: "bg-amber-500" },
+  cold: { label: "Cold", emoji: "🔵", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30",       activeCls: "bg-sky-500 text-white border-sky-500",       dot: "bg-sky-500" },
 };
 
-function avatarColor(phone: string) {
-  const colors = [
-    "from-blue-500 to-indigo-600",
-    "from-emerald-500 to-teal-600",
-    "from-purple-500 to-pink-600",
-    "from-orange-500 to-red-600",
-    "from-cyan-500 to-blue-600",
-    "from-rose-500 to-pink-600",
-    "from-amber-500 to-orange-600",
-  ];
-  let h = 0;
-  for (const c of phone) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+function avatarColor(p: string) {
+  const colors = ["from-blue-500 to-indigo-600","from-emerald-500 to-teal-600","from-purple-500 to-pink-600","from-orange-500 to-red-600","from-cyan-500 to-blue-600","from-rose-500 to-pink-600","from-amber-500 to-orange-600"];
+  let h = 0; for (const c of p) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return colors[h % colors.length];
 }
-
-function categorize(count: number, lastInboundAt: Date | null): Category {
-  if (!lastInboundAt) return "cold";
-  const hrs = differenceInHours(new Date(), lastInboundAt);
+function autoCat(count: number, last: Date | null): Category {
+  if (!last) return "cold";
+  const hrs = differenceInHours(new Date(), last);
   if (hrs <= 24 && count >= 5) return "hot";
   if (hrs <= 72) return "warm";
   return "cold";
 }
-
-const STAR_KEY = "wa-monitor-starred";
-const loadStarred = (): Set<string> => {
-  if (typeof window === "undefined") return new Set();
-  try {
-    return new Set(JSON.parse(localStorage.getItem(STAR_KEY) || "[]"));
-  } catch {
-    return new Set();
-  }
-};
+function dayLabel(d: Date) {
+  if (isToday(d)) return "Today";
+  if (isYesterday(d)) return "Yesterday";
+  return format(d, "MMMM d, yyyy");
+}
+function timeShort(d: Date) {
+  if (isToday(d)) return format(d, "HH:mm");
+  if (isYesterday(d)) return "Yesterday";
+  const days = (Date.now() - d.getTime()) / 86400000;
+  if (days < 7) return format(d, "EEEE");
+  return format(d, "dd/MM/yyyy");
+}
 
 function InboxPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [contacts, setContacts] = useState<Record<string, Contact>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
-  const [starred, setStarred] = useState<Set<string>>(loadStarred);
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const loadMessages = async () => {
+    const { data } = await supabase.from("messages").select("*").order("timestamp", { ascending: false });
+    setMessages((data ?? []) as Message[]);
+    setLoading(false);
+  };
+  const loadContacts = async () => {
+    const { data } = await supabase.from("contacts").select("*");
+    const map: Record<string, Contact> = {};
+    for (const c of (data ?? []) as any[]) {
+      map[c.phone_number] = {
+        phone_number: c.phone_number,
+        is_important: !!c.is_important,
+        lead_category: c.lead_category ?? null,
+        notes: Array.isArray(c.notes) ? c.notes : [],
+      };
+    }
+    setContacts(map);
+  };
 
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .order("timestamp", { ascending: false });
-      if (!active) return;
-      setMessages((data ?? []) as Message[]);
-      setLoading(false);
-    };
-    load();
-    const ch = supabase
-      .channel("messages-inbox")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, load)
+    loadMessages(); loadContacts();
+    const ch = supabase.channel("inbox-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, loadMessages)
+      .on("postgres_changes", { event: "*", schema: "public", table: "contacts" }, loadContacts)
       .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   useEffect(() => {
@@ -118,15 +111,40 @@ function InboxPage() {
     if (p) setSelected(p);
   }, []);
 
-  const toggleStar = (phone: string) => {
-    setStarred((prev) => {
-      const next = new Set(prev);
-      next.has(phone) ? next.delete(phone) : next.add(phone);
-      if (typeof window !== "undefined") {
-        localStorage.setItem(STAR_KEY, JSON.stringify([...next]));
-      }
-      return next;
+  const upsertContact = async (phone: string, patch: Partial<Contact>) => {
+    const existing = contacts[phone] ?? { phone_number: phone, is_important: false, lead_category: null, notes: [] };
+    const next: Contact = { ...existing, ...patch };
+    setContacts((prev) => ({ ...prev, [phone]: next }));
+    await supabase.from("contacts").upsert({
+      phone_number: phone,
+      is_important: next.is_important,
+      lead_category: next.lead_category,
+      notes: next.notes,
+      updated_at: new Date().toISOString(),
     });
+  };
+
+  const toggleStar = (phone: string) => {
+    const cur = contacts[phone];
+    upsertContact(phone, { is_important: !(cur?.is_important) });
+  };
+  const setTag = (phone: string, cat: Category | null) => {
+    upsertContact(phone, { lead_category: cat });
+  };
+  const addNote = async (phone: string, text: string) => {
+    const t = text.trim(); if (!t) return;
+    const cur = contacts[phone] ?? { phone_number: phone, is_important: false, lead_category: null, notes: [] };
+    const next = [...cur.notes, { text: t, created_at: new Date().toISOString() }];
+    await upsertContact(phone, { notes: next });
+    setNoteDraft("");
+  };
+  const deleteConv = async (phone: string) => {
+    setConfirmDelete(null);
+    await supabase.from("messages").delete().eq("phone_number", phone);
+    await supabase.from("contacts").delete().eq("phone_number", phone);
+    setMessages((prev) => prev.filter((m) => m.phone_number !== phone));
+    setContacts((prev) => { const n = { ...prev }; delete n[phone]; return n; });
+    if (selected === phone) setSelected(null);
   };
 
   const allConversations = useMemo<Conversation[]>(() => {
@@ -138,12 +156,9 @@ function InboxPage() {
       const ts = new Date(m.timestamp);
       if (!e) {
         map.set(m.phone_number, {
-          phone_number: m.phone_number,
-          last: m,
-          count: 1,
-          unread: isUnread ? 1 : 0,
-          activeToday: today,
-          category: "cold",
+          phone_number: m.phone_number, last: m, count: 1,
+          unread: isUnread ? 1 : 0, activeToday: today,
+          autoCategory: "cold", category: null, isImportant: false, notes: [],
           lastInboundAt: m.direction === "inbound" ? ts : null,
         });
       } else {
@@ -151,362 +166,364 @@ function InboxPage() {
         if (isUnread) e.unread += 1;
         if (today) e.activeToday = true;
         if (ts > new Date(e.last.timestamp)) e.last = m;
-        if (m.direction === "inbound" && (!e.lastInboundAt || ts > e.lastInboundAt)) {
-          e.lastInboundAt = ts;
-        }
+        if (m.direction === "inbound" && (!e.lastInboundAt || ts > e.lastInboundAt)) e.lastInboundAt = ts;
       }
     }
     const list = [...map.values()];
-    for (const c of list) c.category = categorize(c.count, c.lastInboundAt);
+    for (const c of list) {
+      const ct = contacts[c.phone_number];
+      c.autoCategory = autoCat(c.count, c.lastInboundAt);
+      c.category = ct?.lead_category ?? null;
+      c.isImportant = !!ct?.is_important;
+      c.notes = ct?.notes ?? [];
+    }
     return list.sort((a, b) => +new Date(b.last.timestamp) - +new Date(a.last.timestamp));
-  }, [messages]);
+  }, [messages, contacts]);
 
   const conversations = useMemo(() => {
     return allConversations
-      .filter((c) => filter === "all" || c.category === filter)
+      .filter((c) => {
+        if (filter === "all") return true;
+        if (filter === "important") return c.isImportant;
+        return (c.category ?? c.autoCategory) === filter;
+      })
       .filter((c) => c.phone_number.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => {
-        const sa = starred.has(a.phone_number) ? 1 : 0;
-        const sb = starred.has(b.phone_number) ? 1 : 0;
-        return sb - sa;
-      });
-  }, [allConversations, filter, search, starred]);
+      .sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0));
+  }, [allConversations, filter, search]);
 
   const counts = useMemo(() => {
-    const c = { all: allConversations.length, hot: 0, warm: 0, cold: 0 };
-    for (const conv of allConversations) c[conv.category]++;
+    const c = { all: allConversations.length, important: 0, hot: 0, warm: 0, cold: 0 };
+    for (const x of allConversations) {
+      if (x.isImportant) c.important++;
+      const cat = x.category ?? x.autoCategory;
+      c[cat]++;
+    }
     return c;
   }, [allConversations]);
 
   const conversationMessages = useMemo(
-    () =>
-      selected
-        ? messages
-            .filter((m) => m.phone_number === selected)
-            .sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp))
-        : [],
+    () => selected ? messages.filter((m) => m.phone_number === selected).sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp)) : [],
     [messages, selected],
   );
+
+  // mark inbound as read
+  useEffect(() => {
+    if (!selected) return;
+    const unread = messages.filter((m) => m.phone_number === selected && m.direction === "inbound" && m.is_read === false);
+    if (!unread.length) return;
+    supabase.from("messages").update({ is_read: true }).in("id", unread.map((u) => u.id)).then(() => {});
+  }, [selected, messages]);
 
   useEffect(() => {
     if (!selected && conversations.length > 0) setSelected(conversations[0].phone_number);
   }, [conversations, selected]);
 
-  const selectedConv = allConversations.find((c) => c.phone_number === selected);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selected, conversationMessages.length]);
 
-  const filterTabs: { key: FilterKey; label: string; emoji?: string }[] = [
+  const selectedConv = allConversations.find((c) => c.phone_number === selected);
+  const selectedContact = selected ? contacts[selected] : undefined;
+  const effectiveCat = selectedConv ? (selectedConv.category ?? selectedConv.autoCategory) : null;
+
+  const tabs: { key: FilterKey; label: string; icon?: string }[] = [
     { key: "all", label: "All" },
-    { key: "hot", label: "Hot", emoji: "🔥" },
-    { key: "warm", label: "Warm", emoji: "🟡" },
-    { key: "cold", label: "Cold", emoji: "🔵" },
+    { key: "important", label: "Important", icon: "⭐" },
+    { key: "hot", label: "Hot", icon: "🔥" },
+    { key: "warm", label: "Warm", icon: "🟡" },
+    { key: "cold", label: "Cold", icon: "🔵" },
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Conversations list */}
-      <div
-        className={`${selected ? "hidden md:flex" : "flex"} w-full md:w-[400px] flex-col border-r border-slate-200 bg-white`}
-      >
-        <div className="px-5 pt-5 pb-3">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Inbox</h1>
-            <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-              {conversations.length} chats
-            </span>
+    <div className="flex h-screen overflow-hidden bg-[#0B141A]">
+      {/* LEFT SIDEBAR */}
+      <div className={`${selected ? "hidden md:flex" : "flex"} w-full md:w-[400px] flex-col bg-[#111B21] border-r border-black/40`}>
+        {/* Header */}
+        <div className="px-4 h-[60px] bg-[#202C33] flex items-center justify-between flex-shrink-0">
+          <h1 className="text-[#E9EDEF] font-semibold text-base tracking-tight">WA Monitor</h1>
+          <div className="flex items-center gap-1 text-[#AEBAC1]">
+            <button className="p-2 hover:bg-white/10 rounded-full transition-colors"><MessageCircle className="h-5 w-5" /></button>
+            <button className="p-2 hover:bg-white/10 rounded-full transition-colors"><MoreVertical className="h-5 w-5" /></button>
           </div>
-          <div className="relative mb-3">
-            <Search className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        </div>
+
+        {/* Search */}
+        <div className="px-3 pt-2 pb-2 bg-[#111B21]">
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#8696A0]" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl bg-slate-100 border border-transparent focus:bg-white focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+              placeholder="Search or start new chat"
+              className="w-full pl-12 pr-3 py-2 text-[14px] rounded-lg bg-[#202C33] text-[#E9EDEF] placeholder:text-[#8696A0] border border-transparent focus:outline-none"
             />
           </div>
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1">
-            <ListFilter className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-            {filterTabs.map((t) => {
-              const isActive = filter === t.key;
-              const count = counts[t.key];
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setFilter(t.key)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium border transition-all flex-shrink-0 ${
-                    isActive
-                      ? "bg-[#0084ff] text-white border-[#0084ff] shadow-sm"
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  {t.emoji && <span>{t.emoji}</span>}
-                  <span>{t.label}</span>
-                  <span
-                    className={`text-[10px] font-semibold ${isActive ? "text-white/80" : "text-slate-400"}`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-2 pb-3">
-          {loading && (
-            <div className="p-6 text-sm text-slate-400 text-center">Loading conversations…</div>
-          )}
+
+        {/* Filter tabs */}
+        <div className="px-3 pb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+          {tabs.map((t) => {
+            const isActive = filter === t.key;
+            const count = counts[t.key];
+            return (
+              <button key={t.key} onClick={() => setFilter(t.key)}
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium border transition-all flex-shrink-0 ${
+                  isActive ? "bg-[#00A884]/20 text-[#00A884] border-[#00A884]/40" : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
+                }`}>
+                {t.icon && <span>{t.icon}</span>}
+                <span>{t.label}</span>
+                <span className="text-[10px] opacity-70">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Conversation list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading && <div className="p-6 text-sm text-[#8696A0] text-center">Loading…</div>}
           {!loading && conversations.length === 0 && (
-            <div className="p-10 text-sm text-slate-400 text-center">No conversations</div>
+            <div className="p-10 text-sm text-[#8696A0] text-center">No conversations</div>
           )}
           {conversations.map((c) => {
             const initial = c.phone_number.replace(/\D/g, "").slice(-1) || "#";
-            const isSelected = selected === c.phone_number;
-            const isStarred = starred.has(c.phone_number);
-            const cat = CATEGORY_META[c.category];
+            const isSel = selected === c.phone_number;
+            const cat = c.category ?? c.autoCategory;
+            const meta = CAT[cat];
             return (
-              <button
-                key={c.phone_number}
+              <div key={c.phone_number}
                 onClick={() => setSelected(c.phone_number)}
-                className={`w-full text-left px-3 py-3 rounded-xl flex gap-3 transition-all mb-1 group ${
-                  isSelected ? "bg-blue-50" : "hover:bg-slate-50"
-                }`}
-              >
+                className={`group cursor-pointer flex items-center gap-3 pl-3 pr-3 py-3 border-b border-white/[0.04] transition-colors ${
+                  isSel ? "bg-[#2A3942]" : "hover:bg-[#202C33]"
+                }`}>
                 <div className="relative flex-shrink-0">
-                  <div
-                    className={`h-12 w-12 rounded-full bg-gradient-to-br ${avatarColor(c.phone_number)} text-white flex items-center justify-center text-lg font-semibold shadow-sm`}
-                  >
+                  <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${avatarColor(c.phone_number)} text-white flex items-center justify-center text-lg font-semibold`}>
                     {initial}
                   </div>
-                  {c.activeToday && (
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-[#00c853] border-2 border-white" />
-                  )}
+                  {c.activeToday && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#00A884] border-2 border-[#111B21]" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between items-center gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span
-                        className={`font-semibold text-[14px] truncate ${isSelected ? "text-[#0084ff]" : "text-slate-900"}`}
-                      >
-                        +{c.phone_number}
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md border flex-shrink-0 ${cat.classes}`}
-                      >
-                        <span>{cat.emoji}</span>
-                        {cat.label}
+                      <span className="font-medium text-[15px] text-[#E9EDEF] truncate">+{c.phone_number}</span>
+                      {c.isImportant && <Star className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" fill="currentColor" />}
+                      <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${meta.cls}`}>
+                        <span>{meta.emoji}</span>{meta.label}
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-400 flex-shrink-0 font-medium">
-                      {formatDistanceToNow(new Date(c.last.timestamp), { addSuffix: false })}
+                    <span className={`text-[11px] flex-shrink-0 font-medium ${c.unread > 0 ? "text-[#00A884]" : "text-[#8696A0]"}`}>
+                      {timeShort(new Date(c.last.timestamp))}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-1">
-                    <div className="flex items-center gap-1 text-[13px] text-slate-500 truncate min-w-0 flex-1">
-                      {c.last.direction === "outbound" && (
-                        <CheckCheck className="h-3.5 w-3.5 text-[#0084ff] flex-shrink-0" />
-                      )}
+                    <div className="flex items-center gap-1 text-[13px] text-[#8696A0] truncate min-w-0 flex-1">
+                      {c.last.direction === "outbound" && <CheckCheck className="h-3.5 w-3.5 text-[#53BDEB] flex-shrink-0" />}
                       <span className="truncate">{c.last.message_text}</span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button onClick={(e) => { e.stopPropagation(); toggleStar(c.phone_number); }}
+                        className={`p-1 rounded transition-all ${c.isImportant ? "text-amber-400" : "text-[#8696A0] opacity-0 group-hover:opacity-100 hover:text-amber-400"}`}>
+                        <Star className="h-4 w-4" fill={c.isImportant ? "currentColor" : "none"} />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(c.phone_number); }}
+                        className="p-1 rounded text-[#8696A0] opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                       {c.unread > 0 && (
-                        <span className="bg-[#00c853] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                        <span className="bg-[#00A884] text-white text-[10px] font-bold h-5 min-w-[20px] px-1.5 rounded-full inline-flex items-center justify-center">
                           {c.unread}
                         </span>
                       )}
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleStar(c.phone_number);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleStar(c.phone_number);
-                          }
-                        }}
-                        className={`p-1 rounded-md transition-all ${
-                          isStarred
-                            ? "text-amber-500"
-                            : "text-slate-300 opacity-0 group-hover:opacity-100 hover:text-amber-500"
-                        }`}
-                        aria-label={isStarred ? "Unstar" : "Star"}
-                      >
-                        <Star
-                          className="h-4 w-4"
-                          fill={isStarred ? "currentColor" : "none"}
-                        />
-                      </span>
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* Conversation panel */}
-      <div className={`${selected ? "flex" : "hidden md:flex"} flex-1 flex-col bg-[#efeae2] relative`}>
+      {/* RIGHT CHAT AREA */}
+      <div className={`${selected ? "flex" : "hidden md:flex"} flex-1 flex-col bg-[#0B141A] relative`}>
         {selected && selectedConv ? (
           <>
             {/* Header */}
-            <div className="px-5 py-3 border-b border-slate-200 bg-white flex items-center gap-3 shadow-sm z-10">
-              <button
-                onClick={() => setSelected(null)}
-                className="md:hidden text-slate-500 text-lg"
-              >
-                ←
-              </button>
+            <div className="px-4 h-[60px] bg-[#202C33] flex items-center gap-3 flex-shrink-0 border-l border-black/30">
+              <button onClick={() => setSelected(null)} className="md:hidden text-[#AEBAC1]"><ArrowLeft className="h-5 w-5" /></button>
               <div className="relative">
-                <div
-                  className={`h-10 w-10 rounded-full bg-gradient-to-br ${avatarColor(selected)} text-white flex items-center justify-center text-base font-semibold`}
-                >
+                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${avatarColor(selected)} text-white flex items-center justify-center text-base font-semibold`}>
                   {selected.replace(/\D/g, "").slice(-1) || "#"}
                 </div>
-                {selectedConv.activeToday && (
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#00c853] border-2 border-white" />
-                )}
+                {selectedConv.activeToday && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#00A884] border-2 border-[#202C33]" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[15px] text-slate-900">+{selected}</span>
-                  <span
-                    className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md border ${CATEGORY_META[selectedConv.category].classes}`}
-                  >
-                    <span>{CATEGORY_META[selectedConv.category].emoji}</span>
-                    {CATEGORY_META[selectedConv.category].label}
-                  </span>
-                </div>
-                <div className="text-[12px] text-slate-500 mt-0.5">
-                  {selectedConv.count} messages · AI responding
-                </div>
+                <div className="font-medium text-[15px] text-[#E9EDEF] truncate">+{selected}</div>
+                <div className="text-[12px] text-[#8696A0]">{selectedConv.activeToday ? "online" : `last seen ${timeShort(new Date(selectedConv.last.timestamp))}`}</div>
               </div>
-              <div className="flex items-center gap-1 text-slate-500">
-                <button
-                  onClick={() => toggleStar(selected)}
-                  className={`p-2 hover:bg-slate-100 rounded-lg transition-colors ${starred.has(selected) ? "text-amber-500" : ""}`}
-                >
-                  <Star
-                    className="h-4 w-4"
-                    fill={starred.has(selected) ? "currentColor" : "none"}
-                  />
+              <div className="flex items-center gap-1 text-[#AEBAC1]">
+                <button className="p-2 hover:bg-white/10 rounded-full"><Search className="h-5 w-5" /></button>
+                <button className="p-2 hover:bg-white/10 rounded-full"><Phone className="h-5 w-5" /></button>
+                <button className="p-2 hover:bg-white/10 rounded-full"><Video className="h-5 w-5" /></button>
+                <button className="p-2 hover:bg-white/10 rounded-full"><MoreVertical className="h-5 w-5" /></button>
+              </div>
+            </div>
+
+            {/* Toolbar */}
+            <div className="px-4 py-2 bg-[#1F2A30] border-b border-black/30 flex items-center gap-2 flex-wrap flex-shrink-0">
+              <button onClick={() => toggleStar(selected)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${
+                  selectedConv.isImportant ? "bg-amber-400/15 text-amber-300 border-amber-400/40" : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
+                }`}>
+                <Star className="h-3.5 w-3.5" fill={selectedConv.isImportant ? "currentColor" : "none"} />
+                {selectedConv.isImportant ? "Important" : "Mark important"}
+              </button>
+              <div className="h-5 w-px bg-white/10" />
+              <span className="text-[11px] text-[#8696A0] font-medium uppercase tracking-wider">Tag:</span>
+              {(["hot","warm","cold"] as Category[]).map((k) => {
+                const meta = CAT[k]; const active = effectiveCat === k && selectedConv.category === k;
+                return (
+                  <button key={k} onClick={() => setTag(selected, active ? null : k)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${
+                      active ? meta.activeCls : meta.cls + " hover:opacity-80"
+                    }`}>
+                    <span>{meta.emoji}</span>{meta.label}
+                  </button>
+                );
+              })}
+              <div className="ml-auto flex items-center gap-2">
+                <button onClick={() => setNotesOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium bg-[#2A3942] text-[#AEBAC1] hover:bg-[#374248]">
+                  <StickyNote className="h-3.5 w-3.5" />
+                  Notes {selectedConv.notes.length > 0 && <span className="text-[#00A884]">({selectedConv.notes.length})</span>}
                 </button>
-                <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                  <Phone className="h-4 w-4" />
-                </button>
-                <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                  <Video className="h-4 w-4" />
-                </button>
-                <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                  <MoreVertical className="h-4 w-4" />
+                <button onClick={() => setConfirmDelete(selected)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25">
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
                 </button>
               </div>
             </div>
 
-            {/* Messages */}
-            <div
-              className="flex-1 overflow-y-auto px-4 md:px-12 py-6 space-y-1"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23000000' fill-opacity='0.025'%3E%3Cpath d='M40 40c0-22 18-40 40-40v80C58 80 40 62 40 40zM0 40c0 22 18 40 40 40V0C18 0 0 18 0 40z'/%3E%3C/g%3E%3C/svg%3E\")",
-              }}
-            >
-              {conversationMessages.map((m, idx) => {
-                const isOut = m.direction === "outbound";
-                const prev = conversationMessages[idx - 1];
-                const showTime =
-                  !prev ||
-                  new Date(m.timestamp).getTime() - new Date(prev.timestamp).getTime() >
-                    5 * 60 * 1000;
-                const sameSenderAsPrev = prev && prev.direction === m.direction && !showTime;
-                const senderName = isOut ? "AI Agent" : `+${m.phone_number}`;
-                return (
-                  <div key={m.id}>
-                    {showTime && (
-                      <div className="flex justify-center my-3">
-                        <span className="text-[11px] text-slate-600 bg-white/70 backdrop-blur-sm px-3 py-1 rounded-full font-medium shadow-sm">
-                          {format(new Date(m.timestamp), "MMM d, HH:mm")}
-                        </span>
-                      </div>
-                    )}
-                    <div className={`flex ${isOut ? "justify-end" : "justify-start"} mb-0.5`}>
-                      <div
-                        className={`max-w-[70%] flex flex-col ${isOut ? "items-end" : "items-start"}`}
-                      >
-                        {!sameSenderAsPrev && (
-                          <span
-                            className={`text-[11px] font-semibold mb-0.5 px-1 ${
-                              isOut ? "text-[#0084ff]" : "text-slate-600"
-                            }`}
-                          >
-                            {isOut && (
-                              <Bot className="h-3 w-3 inline mr-1 -mt-0.5" />
-                            )}
-                            {senderName}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 md:px-12 py-4"
+                style={{ backgroundColor: "#0B141A", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M40 40c0-22 18-40 40-40v80C58 80 40 62 40 40zM0 40c0 22 18 40 40 40V0C18 0 0 18 0 40z'/%3E%3C/g%3E%3C/svg%3E\")" }}>
+                {conversationMessages.map((m, idx) => {
+                  const isOut = m.direction === "outbound";
+                  const prev = conversationMessages[idx - 1];
+                  const showDay = !prev || dayLabel(new Date(prev.timestamp)) !== dayLabel(new Date(m.timestamp));
+                  return (
+                    <div key={m.id}>
+                      {showDay && (
+                        <div className="flex justify-center my-3">
+                          <span className="text-[11px] text-[#8696A0] bg-[#1F2C33] px-3 py-1 rounded-md font-medium uppercase tracking-wider">
+                            {dayLabel(new Date(m.timestamp))}
                           </span>
-                        )}
-                        <div
-                          className={`px-3.5 py-2 text-[14px] shadow-sm ${
-                            isOut
-                              ? "bg-[#0084ff] text-white rounded-2xl rounded-br-md"
-                              : "bg-white text-slate-800 rounded-2xl rounded-bl-md"
-                          }`}
-                        >
-                          <div className="whitespace-pre-wrap break-words leading-relaxed">
-                            {m.message_text}
-                          </div>
                         </div>
-                        <div
-                          className={`flex items-center gap-1 mt-0.5 px-1 text-[10px] ${
-                            isOut ? "text-slate-500" : "text-slate-400"
-                          }`}
-                        >
-                          <span>{format(new Date(m.timestamp), "HH:mm")}</span>
-                          {isOut && <CheckCheck className="h-3 w-3 text-[#0084ff]" />}
+                      )}
+                      <div className={`flex ${isOut ? "justify-end" : "justify-start"} mb-1`}>
+                        <div className={`max-w-[65%] flex flex-col ${isOut ? "items-end" : "items-start"}`}>
+                          {isOut && <span className="text-[10px] font-semibold mb-0.5 px-2 text-[#00A884]">AI Agent</span>}
+                          <div className={`relative px-3 py-1.5 text-[14px] shadow-sm ${
+                            isOut ? "bg-[#005C4B] text-[#E9EDEF] rounded-lg rounded-tr-none" : "bg-[#202C33] text-[#E9EDEF] rounded-lg rounded-tl-none"
+                          }`}>
+                            <div className="whitespace-pre-wrap break-words leading-snug pr-14">{m.message_text}</div>
+                            <div className="float-right -mb-1 ml-2 mt-1 flex items-center gap-1 text-[10px] text-[#8696A0]">
+                              <span>{format(new Date(m.timestamp), "HH:mm")}</span>
+                              {isOut && <CheckCheck className="h-3 w-3 text-[#53BDEB]" />}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Notes panel */}
+              {notesOpen && (
+                <div className="w-[340px] flex flex-col bg-[#111B21] border-l border-black/40 flex-shrink-0">
+                  <div className="px-4 h-[60px] bg-[#202C33] flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center gap-2 text-[#E9EDEF]">
+                      <StickyNote className="h-4 w-4" />
+                      <span className="font-medium text-[15px]">Notes</span>
+                    </div>
+                    <button onClick={() => setNotesOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full text-[#AEBAC1]">
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                );
-              })}
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {selectedConv.notes.length === 0 && (
+                      <div className="text-center text-[#8696A0] text-sm py-8">No notes yet</div>
+                    )}
+                    {[...selectedConv.notes].reverse().map((n, i) => (
+                      <div key={i} className="bg-[#202C33] rounded-lg p-3 text-[13px] text-[#E9EDEF]">
+                        <div className="whitespace-pre-wrap break-words">{n.text}</div>
+                        <div className="text-[10px] text-[#8696A0] mt-1.5">{format(new Date(n.created_at), "MMM d, yyyy · HH:mm")}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-3 border-t border-black/30 bg-[#1F2A30]">
+                    <textarea
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      placeholder="Add a note about this contact…"
+                      rows={3}
+                      className="w-full bg-[#2A3942] text-[#E9EDEF] placeholder:text-[#8696A0] text-[13px] rounded-lg p-2.5 focus:outline-none resize-none"
+                    />
+                    <button onClick={() => addNote(selected, noteDraft)}
+                      disabled={!noteDraft.trim()}
+                      className="mt-2 w-full bg-[#00A884] hover:bg-[#06CF9C] disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium py-2 rounded-lg transition-colors">
+                      Save note
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Input bar (read-only) */}
-            <div className="px-4 py-3 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2">
-              <button
-                className="p-2 text-slate-500 hover:bg-slate-200 rounded-full transition-colors"
-                disabled
-              >
-                <Smile className="h-5 w-5" />
-              </button>
-              <button
-                className="p-2 text-slate-500 hover:bg-slate-200 rounded-full transition-colors"
-                disabled
-              >
-                <Paperclip className="h-5 w-5" />
-              </button>
-              <input
-                readOnly
-                placeholder="Read-only — monitoring view"
-                className="flex-1 px-4 py-2.5 rounded-full bg-white text-sm text-slate-500 border border-transparent outline-none cursor-not-allowed"
-              />
-              <button
-                className="p-2.5 bg-[#0084ff] text-white rounded-full opacity-50 cursor-not-allowed"
-                disabled
-              >
+            {/* Input */}
+            <div className="px-4 py-3 bg-[#202C33] flex items-center gap-2 flex-shrink-0">
+              <button className="p-2 text-[#8696A0]" disabled><Smile className="h-5 w-5" /></button>
+              <button className="p-2 text-[#8696A0]" disabled><Paperclip className="h-5 w-5" /></button>
+              <div className="flex-1 px-4 py-2.5 rounded-lg bg-[#2A3942] text-[#8696A0] text-[14px] flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 text-[#00A884]" />
+                Monitoring mode — replies sent by AI agent
+              </div>
+              <button className="p-2.5 bg-[#00A884] text-white rounded-full opacity-50 cursor-not-allowed" disabled>
                 <Send className="h-4 w-4" />
               </button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-            Select a conversation to view messages
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#0B141A] text-center px-6">
+            <div className="h-32 w-32 rounded-full bg-[#202C33] flex items-center justify-center mb-6">
+              <MessageCircle className="h-16 w-16 text-[#3B4A54]" strokeWidth={1.2} />
+            </div>
+            <h2 className="text-[#E9EDEF] text-2xl font-light mb-2">Select a conversation to start monitoring</h2>
+            <p className="text-[#8696A0] text-sm max-w-md">Your AI agent conversations appear here in real time.</p>
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-[#202C33] rounded-lg shadow-2xl max-w-sm w-[90%] p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[#E9EDEF] text-lg font-medium mb-2">Delete this conversation?</h3>
+            <p className="text-[#8696A0] text-sm mb-5">This cannot be undone. All messages and notes for +{confirmDelete} will be permanently removed.</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)}
+                className="px-5 py-2 rounded-full text-[14px] font-medium text-[#00A884] hover:bg-white/5 transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => deleteConv(confirmDelete)}
+                className="px-5 py-2 rounded-full text-[14px] font-medium bg-red-600 hover:bg-red-700 text-white transition-colors">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
