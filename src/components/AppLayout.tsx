@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut } from "lucide-react";
+import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut, Code2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const nav = [
@@ -114,6 +114,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Settings className="h-[18px] w-[18px]" />
             Settings
+          </Link>
+          <Link
+            to="/api-docs"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+              pathname.startsWith("/api-docs")
+                ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
+                : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
+            }`}
+          >
+            <Code2 className="h-[18px] w-[18px]" />
+            API Docs
           </Link>
         </nav>
 
