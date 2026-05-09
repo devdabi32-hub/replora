@@ -1014,6 +1014,55 @@ function Faq() {
   );
 }
 
+function Troubleshooting() {
+  const items = [
+    {
+      err: "401 Invalid API key",
+      fix: "Check your x-wa-secret header contains your full key starting with wam_sk_",
+    },
+    {
+      err: "Messages not in inbox",
+      fix: "Verify your Secret API Key in Settings matches what you put in n8n.",
+    },
+    {
+      err: "Expressions showing as text",
+      fix: "Click the fx icon on value fields in n8n to enable expression mode.",
+    },
+    {
+      err: "Workflow runs multiple times",
+      fix: "Add a Filter node — WhatsApp sends delivery receipts that trigger multiple executions.",
+    },
+  ];
+  return (
+    <Section
+      id="troubleshooting"
+      eyebrow="Help"
+      title="Troubleshooting"
+      subtitle="Common issues and how to fix them."
+    >
+      <div className="space-y-3">
+        {items.map((it) => (
+          <div
+            key={it.err}
+            className="rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors"
+          >
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
+                Error
+              </span>
+              <div className="font-semibold text-slate-900 text-[14px]">{it.err}</div>
+            </div>
+            <div className="mt-2 flex items-start gap-2">
+              <Check className="h-4 w-4 text-[#00c853] mt-0.5 shrink-0" />
+              <div className="text-[14px] text-slate-700">{it.fix}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
