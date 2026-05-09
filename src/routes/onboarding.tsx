@@ -1,17 +1,83 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { MessageCircle, Copy, Check, ArrowRight } from "lucide-react";
+import {
+  Eye,
+  Copy,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  Activity,
+  Flame,
+  BarChart3,
+  FileText,
+  Phone,
+  UserCog,
+} from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Welcome — WA Monitor" }] }),
+  head: () => ({ meta: [{ title: "Welcome — Chatora" }] }),
   component: OnboardingPage,
 });
+
+const INDUSTRIES = [
+  "Marketing & Advertising Agency",
+  "WhatsApp Automation Agency",
+  "n8n / No-Code Automation",
+  "E-commerce & D2C Brand",
+  "Real Estate",
+  "Education & Coaching",
+  "Healthcare & Wellness",
+  "Financial Services",
+  "SaaS & Technology",
+  "Other",
+];
+
+const TEAM_SIZES = [
+  { id: "solo", label: "Just me", hint: "1" },
+  { id: "small", label: "Small team", hint: "2-5" },
+  { id: "growing", label: "Growing team", hint: "6-15" },
+  { id: "midsize", label: "Mid-size", hint: "16-50" },
+  { id: "large", label: "Large", hint: "50+" },
+];
+
+const USE_CASES = [
+  { id: "monitor", label: "Monitor AI agent conversations", icon: Activity },
+  { id: "categorise", label: "Categorise leads (Hot/Warm/Cold)", icon: Flame },
+  { id: "track", label: "Track AI performance", icon: BarChart3 },
+  { id: "share", label: "Share reports with clients", icon: FileText },
+  { id: "multi", label: "Manage multiple WhatsApp numbers", icon: Phone },
+  { id: "human", label: "Human takeover when AI fails", icon: UserCog },
+];
+
+function generateApiKey() {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let s = "";
+  for (let i = 0; i < 24; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `wam_sk_${s}`;
+}
 
 function OnboardingPage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
+
+  // Step 1
+  const [orgName, setOrgName] = useState("");
+  const [website, setWebsite] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [teamSize, setTeamSize] = useState<string>("");
+
+  // Step 2
+  const [useCases, setUseCases] = useState<string[]>([]);
+
+  // Step 3
+  const apiKey = useMemo(() => generateApiKey(), []);
   const [copied, setCopied] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -20,46 +86,285 @@ function OnboardingPage() {
     });
   }, [navigate]);
 
-  const webhook = `https://wa-monitor.lovable.app/api/webhook/${userId ?? "..."}`;
+  const step1Valid = orgName.trim() && industry && teamSize;
+
+  const saveStep1 = async () => {
+    if (!userId || !step1Valid) return;
+    setSaving(true);
+    setError(null);
+    const { error: err } = await supabase.from("business_profiles").upsert(
+      {
+        agency_id: userId,
+        organisation_name: orgName.trim(),
+        website: website.trim() || null,
+        industry,
+        team_size: teamSize,
+      },
+      { onConflict: "agency_id" },
+    );
+    setSaving(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setStep(2);
+  };
+
+  const goStep3 = () => setStep(3);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(webhook);
+    await navigator.clipboard.writeText(apiKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const toggleUseCase = (id: string) =>
+    setUseCases((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const skip = () => navigate({ to: "/inbox" });
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9] px-4 py-10">
-      <div className="w-full max-w-xl">
-        <div className="flex flex-col items-center mb-6">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
-            <MessageCircle className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-[#f5f6f8] px-4 py-10">
+      <div className="max-w-[560px] mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-[#0084ff] flex items-center justify-center">
+              <Eye className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-semibold text-slate-900">Chatora</span>
           </div>
-          <div className="text-xl font-semibold text-slate-900">WA Monitor</div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">🎉 Welcome aboard!</h1>
-          <p className="text-sm text-slate-500 mb-6">Your account is ready. Connect your n8n workflow to start monitoring messages.</p>
-
-          <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Your unique webhook URL</div>
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
-            <code className="flex-1 text-xs text-slate-800 break-all font-mono">{webhook}</code>
-            <button onClick={copy} disabled={!userId}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-medium disabled:opacity-50 transition-colors">
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-sm font-semibold text-blue-900 mb-1">📋 Setup instructions</div>
-            <p className="text-sm text-blue-800">Paste this URL in your n8n HTTP Request node to start sending WhatsApp messages to your monitoring portal.</p>
-          </div>
-
-          <button onClick={() => navigate({ to: "/inbox" })}
-            className="w-full mt-6 h-11 rounded-lg bg-[#0f1117] hover:bg-slate-800 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors">
-            Go to my inbox <ArrowRight className="h-4 w-4" />
+          <button
+            onClick={skip}
+            className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
+          >
+            Skip
           </button>
+        </div>
+
+        {/* Progress */}
+        <div className="mb-6">
+          <div className="flex justify-between text-xs font-medium text-slate-500 mb-2">
+            <span>Step {step} of 3</span>
+            <span>{Math.round((step / 3) * 100)}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#0084ff] transition-all duration-500"
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+          {step === 1 && (
+            <>
+              <h1 className="text-2xl font-semibold text-slate-900 mb-1">
+                Tell us about your business
+              </h1>
+              <p className="text-sm text-slate-500 mb-6">
+                Help us personalise your experience
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-slate-700">
+                    Organisation Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder="Automateup Agency"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-700">Website</label>
+                  <input
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="https://yourwebsite.com"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-700">
+                    Industry <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm bg-white"
+                  >
+                    <option value="">Select your industry</option>
+                    {INDUSTRIES.map((i) => (
+                      <option key={i} value={i}>
+                        {i}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-700">
+                    Team Size <span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {TEAM_SIZES.map((t) => {
+                      const active = teamSize === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setTeamSize(t.id)}
+                          className={`text-left px-4 py-3 rounded-lg border-2 transition-all ${
+                            active
+                              ? "border-[#0084ff] bg-blue-50/60"
+                              : "border-slate-200 hover:border-slate-300 bg-white"
+                          }`}
+                        >
+                          <div className="text-sm font-medium text-slate-900">{t.label}</div>
+                          <div className="text-xs text-slate-500">{t.hint}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mt-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={saveStep1}
+                disabled={!step1Valid || saving}
+                className="w-full mt-6 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Next <ArrowRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <h1 className="text-2xl font-semibold text-slate-900 mb-1">
+                How will you use Chatora?
+              </h1>
+              <p className="text-sm text-slate-500 mb-6">Select all that apply</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {USE_CASES.map((u) => {
+                  const active = useCases.includes(u.id);
+                  const Icon = u.icon;
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => toggleUseCase(u.id)}
+                      className={`text-left px-4 py-4 rounded-lg border-2 transition-all flex items-start gap-3 ${
+                        active
+                          ? "border-[#0084ff] bg-blue-50/60"
+                          : "border-slate-200 hover:border-slate-300 bg-white"
+                      }`}
+                    >
+                      <div
+                        className={`h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0 ${
+                          active ? "bg-[#0084ff] text-white" : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="text-sm font-medium text-slate-900 pt-1.5">
+                        {u.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-3 mt-6">
+                <button
+                  onClick={() => setStep(1)}
+                  className="h-11 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium flex items-center gap-2 transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back
+                </button>
+                <button
+                  onClick={goStep3}
+                  className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  Next <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <h1 className="text-2xl font-semibold text-slate-900 mb-1">
+                You're almost ready! 🎉
+              </h1>
+              <p className="text-sm text-slate-500 mb-6">
+                Connect your n8n workflow to start monitoring conversations
+              </p>
+
+              <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                Your unique API key
+              </div>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <code className="flex-1 text-xs text-slate-800 break-all font-mono">
+                  {apiKey}
+                </code>
+                <button
+                  onClick={copy}
+                  className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-medium transition-colors"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {[
+                  "Copy your API key above",
+                  "Add HTTP Request node in n8n",
+                  "Set header x-wa-secret to your key",
+                  "Send a test message",
+                ].map((text, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-blue-50 text-[#0084ff] text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </div>
+                    <div className="text-sm text-slate-700 pt-0.5">
+                      <span className="font-medium text-slate-900">Step {i + 1}:</span> {text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch gap-3 mt-8">
+                <Link
+                  to="/api-docs"
+                  className="flex-1 h-11 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  View full setup guide
+                </Link>
+                <button
+                  onClick={() => navigate({ to: "/inbox" })}
+                  className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  Go to my inbox <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
