@@ -55,6 +55,7 @@ const NAV: NavGroup[] = [
       { id: "connect-make", label: "Connect Make.com" },
       { id: "connect-zapier", label: "Connect Zapier" },
       { id: "test-webhook", label: "Test your webhook" },
+      { id: "troubleshooting", label: "Troubleshooting" },
     ],
   },
   {
@@ -187,6 +188,7 @@ function DocsView() {
             <ConnectMake />
             <ConnectZapier />
             <TestWebhook />
+            <Troubleshooting />
             <InboundMessages />
             <OutboundMessages />
             <MessageObject />
@@ -404,7 +406,7 @@ function Introduction() {
           {
             icon: Shield,
             title: "Secure webhook auth",
-            desc: "Bearer tokens + secret keys. Signed and isolated per agency.",
+            desc: "Single Secret API key. Signed and isolated per agency.",
           },
           {
             icon: Radio,
@@ -434,31 +436,16 @@ function Authentication() {
       id="authentication"
       eyebrow="Security"
       title="Authentication"
-      subtitle="Every request to the WA Monitor webhook must include two headers."
+      subtitle="WA Monitor uses a single API key to authenticate all requests. Include your Secret API Key in every request."
     >
-      <ol className="list-decimal pl-5 space-y-1.5 text-[14px]">
-        <li>
-          <code className="font-mono text-[13px] bg-slate-100 px-1.5 py-0.5 rounded">
-            Authorization: Bearer {"{your_publishable_key}"}
-          </code>
-        </li>
-        <li>
-          <code className="font-mono text-[13px] bg-slate-100 px-1.5 py-0.5 rounded">
-            x-webhook-secret: {"{your_webhook_secret}"}
-          </code>
-        </li>
-      </ol>
       <CodeBlock
-        language="json"
+        language="bash"
         title="headers"
-        code={`{
-  "Content-Type": "application/json",
-  "Authorization": "Bearer YOUR_PUBLISHABLE_KEY",
-  "x-webhook-secret": "YOUR_WEBHOOK_SECRET"
-}`}
+        code={`// Only header you need
+x-wa-secret: wam_sk_your_key_here`}
       />
       <Callout variant="info">
-        Find your keys in <strong>Settings → Webhook Connector</strong>.
+        Find your Secret API Key in <strong>Settings → API Keys</strong>. Keep it private.
       </Callout>
       <Link
         to="/settings"
@@ -497,8 +484,7 @@ function QuickStart() {
         title="cURL"
         code={`curl -X POST ${WEBHOOK_BASE} \\
   -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer YOUR_PUBLISHABLE_KEY" \\
-  -H "x-webhook-secret: YOUR_WEBHOOK_SECRET" \\
+  -H "x-wa-secret: wam_sk_your_key_here" \\
   -d '{
     "phone_number": "919876543210",
     "message_text": "Hello! What are your prices?",
@@ -549,68 +535,72 @@ function ConnectN8n() {
       title="Connect n8n"
       subtitle="Step-by-step guide to connect your n8n WhatsApp workflow."
     >
-      <Step n={1} title="Open your WhatsApp workflow in n8n">
-        Add an <strong>HTTP Request</strong> node after your WhatsApp Trigger node.
+      <Step n={1} title="Get your Secret API Key">
+        Go to <strong>Settings → API Keys</strong> and copy your{" "}
+        <code className="font-mono text-[13px] bg-slate-100 px-1.5 py-0.5 rounded">wam_sk_</code> key.
       </Step>
-      <Step n={2} title="Configure the HTTP Request node">
+      <Step n={2} title="Add an HTTP Request node">
+        Add an <strong>HTTP Request</strong> node after your WhatsApp Trigger in n8n.
+      </Step>
+      <Step n={3} title="Configure the node">
         <ParamTable
           headers={["Field", "Value"]}
           rows={[
             ["Method", "POST"],
             ["URL", WEBHOOK_BASE],
-            ["Authentication", "None (we use custom headers)"],
           ]}
         />
       </Step>
-      <Step n={3} title="Add Headers">
+      <Step n={4} title="Add exactly 2 headers">
         <ParamTable
           headers={["Header Name", "Value"]}
           rows={[
             ["Content-Type", "application/json"],
-            ["Authorization", "Bearer YOUR_PUBLISHABLE_KEY"],
-            ["x-webhook-secret", "YOUR_WEBHOOK_SECRET"],
+            ["x-wa-secret", "wam_sk_your_key_here"],
           ]}
         />
       </Step>
-      <Step n={4} title="Configure Body Parameters (inbound)">
+      <Step n={5} title="Configure Body (Using Fields Below)">
         <ParamTable
-          headers={["Parameter", "Value"]}
+          headers={["Parameter", "Expression"]}
           rows={[
-            ["phone_number", "{{ $json.messages[0].from }}"],
-            ["message_text", "{{ $json.messages[0].text.body }}"],
+            ["phone_number", "={{ $json.messages[0].from }}"],
+            ["message_text", "={{ $json.messages[0].text.body }}"],
             ["direction", "inbound"],
             ["sender_type", "client"],
-            ["timestamp", "{{ new Date().toISOString() }}"],
+            ["timestamp", "={{ new Date().toISOString() }}"],
           ]}
         />
       </Step>
-      <Step
-        n={5}
-        title="Add a second HTTP Request after your AI Agent (outbound)"
-      >
+      <Step n={6} title="Add Filter node after HTTP Request">
         <ParamTable
-          headers={["Parameter", "Value"]}
+          headers={["Field", "Value"]}
           rows={[
-            ["phone_number", "{{ $('WhatsApp Trigger').item.json.messages[0].from }}"],
-            ["message_text", "{{ $json.output }}"],
+            ["Left value", "={{ $json.messages && $json.messages[0] && $json.messages[0].type }}"],
+            ["Operator", "equals"],
+            ["Right value", "text"],
+          ]}
+        />
+      </Step>
+      <Step n={7} title="Add second HTTP Request after AI Agent">
+        Same URL and headers, different body:
+        <ParamTable
+          headers={["Parameter", "Expression"]}
+          rows={[
+            ["phone_number", "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"],
+            ["message_text", "={{ $('AI Agent').item.json.output }}"],
             ["direction", "outbound"],
             ["sender_type", "ai_agent"],
-            ["timestamp", "{{ new Date().toISOString() }}"],
+            ["timestamp", "={{ new Date().toISOString() }}"],
           ]}
         />
       </Step>
-      <Callout variant="success" title="Pro tip">
-        Add a Filter node before HTTP Request to only process text messages:
-        <code className="font-mono text-[13px] bg-white/60 px-1.5 py-0.5 rounded ml-1">
-          messages[0].type === 'text'
-        </code>
-      </Callout>
       <CodeBlock
         language="bash"
-        title="workflow"
-        code={`WhatsApp Trigger → Filter → HTTP Request (inbound)
-                  → AI Agent → HTTP Request (outbound)
-                  → Send Message`}
+        title="final workflow"
+        code={`WhatsApp Trigger → HTTP Request (inbound) →
+Filter → AI Agent → HTTP Request (outbound) →
+Send WhatsApp Reply`}
       />
     </Section>
   );
@@ -777,8 +767,7 @@ function TestWebhook() {
         title="cURL"
         code={`curl -X POST YOUR_WEBHOOK_URL \\
   -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer YOUR_KEY" \\
-  -H "x-webhook-secret: YOUR_SECRET" \\
+  -H "x-wa-secret: wam_sk_your_key_here" \\
   -d '{
     "phone_number": "919999999999",
     "message_text": "This is a test message",
