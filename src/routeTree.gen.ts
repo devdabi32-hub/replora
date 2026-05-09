@@ -17,7 +17,6 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ApiDocsRouteImport } from './routes/api-docs'
-import { Route as IndexRouteImport } from './routes/index'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -59,14 +58,8 @@ const ApiDocsRoute = ApiDocsRouteImport.update({
   path: '/api-docs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/api-docs': typeof ApiDocsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
@@ -77,7 +70,6 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/api-docs': typeof ApiDocsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
@@ -89,7 +81,6 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/api-docs': typeof ApiDocsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
@@ -102,7 +93,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/api-docs'
     | '/contacts'
     | '/dashboard'
@@ -113,7 +103,6 @@ export interface FileRouteTypes {
     | '/signup'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/api-docs'
     | '/contacts'
     | '/dashboard'
@@ -124,7 +113,6 @@ export interface FileRouteTypes {
     | '/signup'
   id:
     | '__root__'
-    | '/'
     | '/api-docs'
     | '/contacts'
     | '/dashboard'
@@ -136,7 +124,6 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   ApiDocsRoute: typeof ApiDocsRoute
   ContactsRoute: typeof ContactsRoute
   DashboardRoute: typeof DashboardRoute
@@ -205,18 +192,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDocsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   ApiDocsRoute: ApiDocsRoute,
   ContactsRoute: ContactsRoute,
   DashboardRoute: DashboardRoute,
