@@ -985,6 +985,8 @@ function Postman() {
 }
 
 function Faq() {
+  // placeholder anchor to keep diff minimal
+  void 0;
   const items = [
     {
       q: "Can I send images or files?",
