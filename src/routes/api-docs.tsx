@@ -16,13 +16,13 @@ import {
 export const Route = createFileRoute("/api-docs")({
   head: () => ({
     meta: [
-      { title: "API Documentation — WA Monitor" },
+      { title: "API Documentation — Chatora" },
       {
         name: "description",
         content:
-          "Connect n8n, Make.com, Zapier or custom code to WA Monitor with our simple webhook API.",
+          "Connect n8n, Make.com, Zapier or custom code to Chatora with our simple webhook API.",
       },
-      { property: "og:title", content: "WA Monitor API Documentation" },
+      { property: "og:title", content: "Chatora API Documentation" },
       {
         property: "og:description",
         content: "Webhook-based API for monitoring WhatsApp AI conversations.",
@@ -388,11 +388,11 @@ function Introduction() {
     <Section
       id="introduction"
       eyebrow="Documentation"
-      title="WA Monitor API Documentation"
+      title="Chatora API Documentation"
       subtitle="Connect any automation tool to monitor your WhatsApp AI agent conversations."
     >
       <p>
-        WA Monitor provides a simple webhook-based API that lets you push WhatsApp
+        Chatora provides a simple webhook-based API that lets you push WhatsApp
         conversation data from any automation platform — n8n, Make.com, Zapier or
         custom code — directly into your monitoring portal.
       </p>
@@ -436,7 +436,7 @@ function Authentication() {
       id="authentication"
       eyebrow="Security"
       title="Authentication"
-      subtitle="WA Monitor uses a single API key to authenticate all requests. Include your Secret API Key in every request."
+      subtitle="Chatora uses a single API key to authenticate all requests. Include your Secret API Key in every request."
     >
       <CodeBlock
         language="bash"
@@ -959,7 +959,7 @@ function N8nNode() {
       subtitle="A native n8n community node — coming soon."
     >
       <Callout variant="info">
-        We're building a one-click WA Monitor node for n8n. Want early access?
+        We're building a one-click Chatora node for n8n. Want early access?
         Email <strong>support@wamonitor.io</strong>.
       </Callout>
     </Section>
@@ -988,7 +988,7 @@ function Faq() {
   const items = [
     {
       q: "Can I send images or files?",
-      a: "Currently WA Monitor supports text messages only. Image support is coming soon.",
+      a: "Currently Chatora supports text messages only. Image support is coming soon.",
     },
     {
       q: "How many messages can I send per second?",
@@ -996,7 +996,7 @@ function Faq() {
     },
     {
       q: "What happens if my webhook request fails?",
-      a: "WA Monitor returns appropriate HTTP status codes. Implement retry logic in your n8n workflow.",
+      a: "Chatora returns appropriate HTTP status codes. Implement retry logic in your n8n workflow.",
     },
     {
       q: "Is the webhook URL permanent?",

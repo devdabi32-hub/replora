@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { MessageCircle, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Sign up — WA Monitor" }] }),
+  head: () => ({ meta: [{ title: "Sign up — Chatora" }] }),
   component: SignupPage,
 });
 
@@ -40,8 +40,8 @@ function SignupPage() {
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
             <MessageCircle className="h-6 w-6 text-white" />
           </div>
-          <div className="text-xl font-semibold text-slate-900">WA Monitor</div>
-          <div className="text-sm text-slate-500">AI Agent Portal</div>
+          <div className="text-xl font-semibold text-slate-900">Chatora</div>
+          <div className="text-sm text-slate-500">Your AI talks. You watch.</div>
         </div>
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
           <h1 className="text-2xl font-semibold text-slate-900 mb-1">Create your account</h1>

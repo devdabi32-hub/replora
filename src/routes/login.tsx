@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { MessageCircle, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — WA Monitor" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Chatora" }] }),
   component: LoginPage,
 });
 
@@ -46,8 +46,8 @@ function LoginPage() {
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
             <MessageCircle className="h-6 w-6 text-white" />
           </div>
-          <div className="text-xl font-semibold text-slate-900">WA Monitor</div>
-          <div className="text-sm text-slate-500">AI Agent Portal</div>
+          <div className="text-xl font-semibold text-slate-900">Chatora</div>
+          <div className="text-sm text-slate-500">Your AI talks. You watch.</div>
         </div>
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
           <h1 className="text-2xl font-semibold text-slate-900 mb-1">Welcome back</h1>
@@ -93,7 +93,7 @@ function LoginPage() {
             Continue with Google
           </button>
           <div className="text-center text-sm text-slate-500 mt-6">
-            New to WA Monitor?{" "}
+            New to Chatora?{" "}
             <Link to="/signup" className="text-[#0084ff] font-medium hover:underline">Start free trial</Link>
           </div>
         </div>

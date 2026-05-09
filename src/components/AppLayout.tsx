@@ -69,8 +69,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#00c853] border-2 border-[#0f1117]" />
           </div>
           <div>
-            <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">WA Monitor</div>
-            <div className="text-[11px] text-slate-500 mt-0.5">AI Agent Portal</div>
+            <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">Chatora</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Your AI talks. You watch.</div>
           </div>
         </div>
 

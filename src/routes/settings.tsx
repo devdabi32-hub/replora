@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — WA Monitor" }] }),
+  head: () => ({ meta: [{ title: "Settings — Chatora" }] }),
   component: SettingsPage,
 });
 
@@ -141,7 +141,7 @@ function SettingsPage() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900 tracking-tight">API Keys</h2>
               <p className="text-sm text-slate-500 mt-0.5">
-                Use these keys to connect your automation tools to WA Monitor.
+                Use these keys to connect your automation tools to Chatora.
               </p>
             </div>
           </div>

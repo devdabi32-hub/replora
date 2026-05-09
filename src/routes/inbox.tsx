@@ -240,7 +240,7 @@ function InboxPage() {
       <div className={`${selected ? "hidden md:flex" : "flex"} w-full md:w-[400px] flex-col bg-[#111B21] border-r border-black/40`}>
         {/* Header */}
         <div className="px-4 h-[60px] bg-[#202C33] flex items-center justify-between flex-shrink-0">
-          <h1 className="text-[#E9EDEF] font-semibold text-base tracking-tight">WA Monitor</h1>
+          <h1 className="text-[#E9EDEF] font-semibold text-base tracking-tight">Chatora</h1>
           <div className="flex items-center gap-1 text-[#AEBAC1]">
             <button className="p-2 hover:bg-white/10 rounded-full transition-colors"><MessageCircle className="h-5 w-5" /></button>
             <button className="p-2 hover:bg-white/10 rounded-full transition-colors"><MoreVertical className="h-5 w-5" /></button>
