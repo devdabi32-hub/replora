@@ -613,7 +613,7 @@ function Step({
 }: {
   n: number;
   title: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="rounded-xl border border-slate-200 p-5 space-y-3 hover:border-slate-300 transition-colors">
