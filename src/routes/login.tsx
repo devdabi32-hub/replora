@@ -78,7 +78,7 @@ function LoginPage() {
             type="button"
             onClick={signInWithGoogle}
             disabled={googleLoading}
-            className="w-full h-11 rounded-lg border border-white/15 bg-white/5 hover:bg-white/5/5 text-white/80 text-sm font-medium flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60"
+            className="w-full h-11 rounded-lg border border-white/15 bg-white/5 hover:bg-white/5 text-white/80 text-sm font-medium flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60"
           >
             {googleLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

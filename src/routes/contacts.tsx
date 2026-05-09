@@ -54,7 +54,7 @@ function ContactsPage() {
     const d = new Date(last);
     if (isToday(d)) return { label: "Active", className: "bg-[#00c853]/15 text-[#00c853] border-green-200" };
     if (isThisWeek(d)) return { label: "Recent", className: "bg-amber-50 text-amber-700 border-amber-200" };
-    return { label: "Dormant", className: "bg-white/5/5 text-white/60 border-white/10" };
+    return { label: "Dormant", className: "bg-white/5 text-white/60 border-white/10" };
   };
 
   return (
@@ -79,14 +79,14 @@ function ContactsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by phone number..."
-              className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl bg-white/5/10 border border-transparent focus:bg-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none transition-all"
+              className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl bg-white/10 border border-transparent focus:bg-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none transition-all"
             />
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wider text-white/60 bg-white/5/5 border-b border-white/10">
+              <tr className="text-left text-[11px] uppercase tracking-wider text-white/60 bg-white/5 border-b border-white/10">
                 <th className="py-3 px-5 font-semibold">Contact</th>
                 <th className="py-3 px-4 font-semibold text-right">Messages</th>
                 <th className="py-3 px-4 font-semibold">First Seen</th>
@@ -102,7 +102,7 @@ function ContactsPage() {
                 const initial = c.phone.replace(/\D/g, "").slice(-1) || "#";
                 const status = statusOf(c.last);
                 return (
-                  <tr key={c.phone} className="border-b border-white/5 last:border-0 hover:bg-white/5/5 transition-colors group">
+                  <tr key={c.phone} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
                     <td className="py-3 px-5">
                       <div className="flex items-center gap-3">
                         <div className={`h-9 w-9 rounded-full bg-gradient-to-br ${avatarColor(c.phone)} text-white flex items-center justify-center text-sm font-semibold flex-shrink-0`}>
@@ -131,7 +131,7 @@ function ContactsPage() {
                     <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => navigate({ to: "/inbox", search: { phone: c.phone } as never })}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5/10 text-white/80 text-xs font-semibold hover:bg-[#0084ff] hover:text-white transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 text-white/80 text-xs font-semibold hover:bg-[#0084ff] hover:text-white transition-colors"
                       >
                         View Chat <ArrowRight className="h-3 w-3" />
                       </button>

@@ -276,7 +276,7 @@ function OnboardingPage() {
                     >
                       <div
                         className={`h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0 ${
-                          active ? "bg-[#0084ff] text-white" : "bg-white/5/10 text-white/70"
+                          active ? "bg-[#0084ff] text-white" : "bg-white/10 text-white/70"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -292,7 +292,7 @@ function OnboardingPage() {
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={() => setStep(1)}
-                  className="h-11 px-4 rounded-lg border border-white/15 text-white/80 hover:bg-white/5/5 text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="h-11 px-4 rounded-lg border border-white/15 text-white/80 hover:bg-white/5 text-sm font-medium flex items-center gap-2 transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
@@ -318,7 +318,7 @@ function OnboardingPage() {
               <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-2">
                 Your unique API key
               </div>
-              <div className="flex items-center gap-2 bg-white/5/5 border border-white/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-3">
                 <code className="flex-1 text-xs text-white/90 break-all font-mono">
                   {apiKey}
                 </code>
@@ -352,7 +352,7 @@ function OnboardingPage() {
               <div className="flex flex-col sm:flex-row items-stretch gap-3 mt-8">
                 <Link
                   to="/api-docs"
-                  className="flex-1 h-11 rounded-lg border border-white/15 text-white/80 hover:bg-white/5/5 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1 h-11 rounded-lg border border-white/15 text-white/80 hover:bg-white/5 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >
                   View full setup guide
                 </Link>

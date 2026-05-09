@@ -150,13 +150,13 @@ function SettingsPage() {
             Secret API key
           </label>
           <div className="mt-2 flex flex-col sm:flex-row items-stretch gap-2">
-            <div className="flex-1 bg-white/5/5 border border-white/10 rounded-lg px-3 py-2.5 font-mono text-xs text-white/90 break-all flex items-center">
+            <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 font-mono text-xs text-white/90 break-all flex items-center">
               {secret || "Loading…"}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={copy}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/5/5 text-white/80 text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/5 text-white/80 text-xs font-semibold transition-colors"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copied ? "Copied" : "Copy"}
@@ -164,7 +164,7 @@ function SettingsPage() {
               <button
                 onClick={regenerate}
                 disabled={regenerating}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/5/10 hover:bg-white/5/10 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/10 hover:bg-white/10 text-white text-xs font-semibold transition-colors disabled:opacity-60"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${regenerating ? "animate-spin" : ""}`} />
                 Regenerate
@@ -204,7 +204,7 @@ function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white/5/5 border border-white/10 rounded-xl p-4">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="text-[11px] text-white/60 uppercase tracking-wider font-semibold">
                   Agency name
@@ -239,7 +239,7 @@ function SettingsPage() {
                   </button>
                   <button
                     onClick={() => { setEditingAgency(false); setAgencyDraft(agency); }}
-                    className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5/5 text-white/80 text-xs font-medium"
+                    className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5 text-white/80 text-xs font-medium"
                   >
                     Cancel
                   </button>
@@ -248,7 +248,7 @@ function SettingsPage() {
                 <div className="text-sm font-medium text-white">{agency || "—"}</div>
               )}
             </div>
-            <div className="bg-white/5/5 border border-white/10 rounded-xl p-4">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="text-[11px] text-white/60 uppercase tracking-wider font-semibold">Email</div>
               <div className="text-sm font-medium text-white mt-1.5">{email}</div>
             </div>
@@ -308,7 +308,7 @@ function SettingsPage() {
             </div>
             {confirmDelete ? (
               <div className="flex items-center gap-2">
-                <button onClick={() => setConfirmDelete(false)} className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5/5 text-white/80 text-xs font-medium">Cancel</button>
+                <button onClick={() => setConfirmDelete(false)} className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5 text-white/80 text-xs font-medium">Cancel</button>
                 <button onClick={deleteAccount} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">
                   <Trash2 className="h-3.5 w-3.5" /> Confirm delete
                 </button>
