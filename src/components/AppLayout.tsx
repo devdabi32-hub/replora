@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut, Code2 } from "lucide-react";
+import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut, Code2, Eye } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const nav = [
@@ -63,10 +63,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.06]">
           <div className="relative">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/30">
               <MessageCircle className="h-5 w-5 text-white" />
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#00c853] border-2 border-[#0f1117]" />
+            <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#0f1117] border border-white/10 flex items-center justify-center">
+              <Eye className="h-2.5 w-2.5 text-[#00c853]" />
+            </span>
           </div>
           <div>
             <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">Chatora</div>
