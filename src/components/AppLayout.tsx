@@ -21,7 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       if (!data.session) {
         navigate({ to: "/login" });
       } else {
-        setUserEmail(data.session.user.email ?? "admin@wamonitor.io");
+        setUserEmail(data.session.user.email ?? "admin@chatora.io");
         setAuthChecked(true);
       }
     });

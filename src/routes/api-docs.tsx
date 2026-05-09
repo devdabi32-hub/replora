@@ -200,7 +200,7 @@ function DocsView() {
             <Postman />
             <Faq />
             <div className="border-t border-white/10 pt-8 text-center text-xs text-white/50">
-              Need help? Email support@wamonitor.io
+              Need help? Email support@chatora.io
             </div>
           </div>
         </div>
@@ -960,7 +960,7 @@ function N8nNode() {
     >
       <Callout variant="info">
         We're building a one-click Chatora node for n8n. Want early access?
-        Email <strong>support@wamonitor.io</strong>.
+        Email <strong>support@chatora.io</strong>.
       </Callout>
     </Section>
   );
