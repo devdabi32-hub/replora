@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — Chatora" }] }),
@@ -43,8 +43,11 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-black px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
+          <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/30 mb-3">
             <MessageCircle className="h-6 w-6 text-white" />
+            <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-black border border-white/10 flex items-center justify-center">
+              <Eye className="h-3 w-3 text-[#00c853]" />
+            </span>
           </div>
           <div className="text-xl font-semibold text-white">Chatora</div>
           <div className="text-sm text-white/60">Your AI talks. You watch.</div>
@@ -70,9 +73,9 @@ function LoginPage() {
             </button>
           </form>
           <div className="flex items-center gap-3 my-5">
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-white/10" />
             <span className="text-[11px] uppercase tracking-wider text-white/50 font-medium">or</span>
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-white/10" />
           </div>
           <button
             type="button"
