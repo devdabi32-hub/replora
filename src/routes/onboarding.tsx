@@ -176,7 +176,7 @@ function OnboardingPage() {
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="Automateup Agency"
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   />
                 </div>
 
@@ -186,7 +186,7 @@ function OnboardingPage() {
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     placeholder="https://yourwebsite.com"
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   />
                 </div>
 
@@ -197,7 +197,7 @@ function OnboardingPage() {
                   <select
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm bg-white/5"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   >
                     <option value="">Select your industry</option>
                     {INDUSTRIES.map((i) => (
