@@ -1,8 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
-import { Copy, Check, RefreshCw, Pencil, Trash2, Webhook, User, CreditCard, AlertTriangle, Sparkles } from "lucide-react";
+import {
+  Copy, Check, RefreshCw, Pencil, Trash2, KeyRound,
+  User, CreditCard, AlertTriangle, Sparkles, ArrowRight, Info,
+} from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — WA Monitor" }] }),
@@ -17,36 +21,102 @@ function genSecret() {
 
 function SettingsPage() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [agency, setAgency] = useState<string>("");
-  const [secret, setSecret] = useState<string>("");
-  const [copied, setCopied] = useState<"url" | "secret" | null>(null);
+  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
+  const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [agency, setAgency] = useState("");
+  const [agencyDraft, setAgencyDraft] = useState("");
+  const [editingAgency, setEditingAgency] = useState(false);
+  const [savingAgency, setSavingAgency] = useState(false);
+  const [secret, setSecret] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
       if (!data.user) { navigate({ to: "/login" }); return; }
       setUserId(data.user.id);
       setEmail(data.user.email ?? "");
-      setAgency((data.user.user_metadata as any)?.agency_name ?? "My Agency");
-    });
-    const stored = localStorage.getItem("wa_webhook_secret");
-    setSecret(stored ?? (() => { const s = genSecret(); localStorage.setItem("wa_webhook_secret", s); return s; })());
+
+      // Try to load agency from agencies table
+      let agencyRow: any = null;
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("agency_id")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (userRow?.agency_id) {
+        const { data: row } = await supabase
+          .from("agencies")
+          .select("id, name, webhook_secret")
+          .eq("id", userRow.agency_id)
+          .maybeSingle();
+        agencyRow = row;
+      }
+
+      if (agencyRow) {
+        setAgencyId(agencyRow.id);
+        setAgency(agencyRow.name ?? "");
+        setAgencyDraft(agencyRow.name ?? "");
+        setSecret(agencyRow.webhook_secret ?? "");
+      } else {
+        // Fallback if backend tables not yet provisioned
+        const fallbackName = (data.user.user_metadata as any)?.agency_name ?? "My Agency";
+        setAgency(fallbackName);
+        setAgencyDraft(fallbackName);
+        const stored = localStorage.getItem("wa_webhook_secret") ?? (() => {
+          const s = genSecret(); localStorage.setItem("wa_webhook_secret", s); return s;
+        })();
+        setSecret(stored);
+      }
+    })();
   }, [navigate]);
 
-  const webhook = `https://wa-monitor.lovable.app/api/webhook/${userId || "..."}`;
-
-  const copy = async (val: string, key: "url" | "secret") => {
-    await navigator.clipboard.writeText(val);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 1800);
+  const copy = async () => {
+    await navigator.clipboard.writeText(secret);
+    setCopied(true);
+    toast.success("API key copied to clipboard");
+    setTimeout(() => setCopied(false), 1800);
   };
 
-  const regenerate = () => {
-    const s = genSecret();
-    localStorage.setItem("wa_webhook_secret", s);
-    setSecret(s);
+  const regenerate = async () => {
+    setRegenerating(true);
+    const next = genSecret();
+    if (agencyId) {
+      const { error } = await supabase
+        .from("agencies")
+        .update({ webhook_secret: next })
+        .eq("id", agencyId);
+      if (error) {
+        toast.error("Could not regenerate key");
+        setRegenerating(false);
+        return;
+      }
+    } else {
+      localStorage.setItem("wa_webhook_secret", next);
+    }
+    setSecret(next);
+    setRegenerating(false);
+    toast.success("New API key generated");
+  };
+
+  const saveAgency = async () => {
+    const name = agencyDraft.trim();
+    if (!name) { toast.error("Agency name cannot be empty"); return; }
+    setSavingAgency(true);
+    if (agencyId) {
+      const { error } = await supabase.from("agencies").update({ name }).eq("id", agencyId);
+      if (error) { toast.error("Could not save"); setSavingAgency(false); return; }
+    } else {
+      await supabase.auth.updateUser({ data: { agency_name: name } });
+    }
+    setAgency(name);
+    setEditingAgency(false);
+    setSavingAgency(false);
+    toast.success("Profile updated!");
   };
 
   const deleteAccount = async () => {
@@ -56,85 +126,144 @@ function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto px-6 lg:px-10 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Settings</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage your workspace, integrations and billing.</p>
+      <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10">
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Settings</h1>
+          <p className="text-sm text-slate-500 mt-1.5">Manage your workspace, integrations and billing.</p>
         </div>
 
-        {/* Webhook */}
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 rounded-lg bg-blue-50 text-[#0084ff] flex items-center justify-center"><Webhook className="h-5 w-5" /></div>
+        {/* API Keys */}
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+          <div className="flex items-start gap-3 mb-6">
+            <div className="h-10 w-10 rounded-lg bg-blue-50 text-[#0084ff] flex items-center justify-center">
+              <KeyRound className="h-5 w-5" />
+            </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Webhook connector</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Connect your n8n workflow to start monitoring messages.</p>
+              <h2 className="text-lg font-semibold text-slate-900 tracking-tight">API Keys</h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Use these keys to connect your automation tools to WA Monitor.
+              </p>
             </div>
           </div>
 
-          <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Webhook URL</label>
-          <div className="mt-2 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
-            <code className="flex-1 text-xs text-slate-800 break-all font-mono">{webhook}</code>
-            <button onClick={() => copy(webhook, "url")} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-medium transition-colors">
-              {copied === "url" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied === "url" ? "Copied" : "Copy"}
-            </button>
+          <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+            Secret API key
+          </label>
+          <div className="mt-2 flex flex-col sm:flex-row items-stretch gap-2">
+            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 font-mono text-xs text-slate-800 break-all flex items-center">
+              {secret || "Loading…"}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copy}
+                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <button
+                onClick={regenerate}
+                disabled={regenerating}
+                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${regenerating ? "animate-spin" : ""}`} />
+                Regenerate
+              </button>
+            </div>
           </div>
 
-          <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider mt-5 block">Secret key</label>
-          <div className="mt-2 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
-            <code className="flex-1 text-xs text-slate-800 break-all font-mono">{secret}</code>
-            <button onClick={() => copy(secret, "secret")} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors">
-              {copied === "secret" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied === "secret" ? "Copied" : "Copy"}
-            </button>
-            <button onClick={regenerate} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors">
-              <RefreshCw className="h-3.5 w-3.5" /> Regenerate
-            </button>
+          <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-blue-50/60 border border-blue-100 px-4 py-3">
+            <Info className="h-4 w-4 text-[#0084ff] mt-0.5 shrink-0" />
+            <p className="text-[13px] text-slate-700 leading-relaxed">
+              This is your unique API key. Add it to your n8n workflow as the{" "}
+              <code className="font-mono bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[11px] text-slate-800">
+                x-wa-secret
+              </code>{" "}
+              header. Never share this key publicly.
+            </p>
           </div>
 
-          <div className="mt-5 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-            <div className="font-semibold mb-1">📋 How to connect n8n</div>
-            <ol className="list-decimal list-inside space-y-1 text-blue-800 text-[13px]">
-              <li>Add an HTTP Request node in your n8n workflow.</li>
-              <li>Set the URL to your webhook above (POST method).</li>
-              <li>Add header <code className="font-mono bg-white/60 px-1 rounded">x-webhook-secret</code> with your secret key.</li>
-              <li>Send the message payload as JSON — it will appear in your inbox instantly.</li>
-            </ol>
-          </div>
+          <Link
+            to="/api-docs"
+            className="mt-5 inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors"
+          >
+            View Integration Guide <ArrowRight className="h-4 w-4" />
+          </Link>
         </section>
 
-        {/* Agency */}
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><User className="h-5 w-5" /></div>
+        {/* Agency Profile */}
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+          <div className="flex items-start gap-3 mb-6">
+            <div className="h-10 w-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <User className="h-5 w-5" />
+            </div>
             <div className="flex-1">
-              <h2 className="text-base font-semibold text-slate-900">Agency profile</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Your workspace identity.</p>
+              <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Agency profile</h2>
+              <p className="text-sm text-slate-500 mt-0.5">Your workspace identity.</p>
             </div>
-            <button className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors">
-              <Pencil className="h-3.5 w-3.5" /> Edit
-            </button>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Agency name</div>
-              <div className="text-sm font-medium text-slate-900 mt-1">{agency}</div>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                  Agency name
+                </div>
+                {!editingAgency && (
+                  <button
+                    onClick={() => { setAgencyDraft(agency); setEditingAgency(true); }}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900"
+                  >
+                    <Pencil className="h-3 w-3" /> Edit
+                  </button>
+                )}
+              </div>
+              {editingAgency ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    autoFocus
+                    value={agencyDraft}
+                    onChange={(e) => setAgencyDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveAgency();
+                      if (e.key === "Escape") { setEditingAgency(false); setAgencyDraft(agency); }
+                    }}
+                    className="flex-1 h-9 px-3 rounded-md border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0084ff]/30 focus:border-[#0084ff]"
+                  />
+                  <button
+                    onClick={saveAgency}
+                    disabled={savingAgency}
+                    className="px-3 h-9 rounded-md bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-semibold disabled:opacity-60"
+                  >
+                    {savingAgency ? "Saving…" : "Save"}
+                  </button>
+                  <button
+                    onClick={() => { setEditingAgency(false); setAgencyDraft(agency); }}
+                    className="px-3 h-9 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="text-sm font-medium text-slate-900">{agency || "—"}</div>
+              )}
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
               <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Email</div>
-              <div className="text-sm font-medium text-slate-900 mt-1">{email}</div>
+              <div className="text-sm font-medium text-slate-900 mt-1.5">{email}</div>
             </div>
           </div>
         </section>
 
         {/* Plan */}
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 rounded-lg bg-green-50 text-[#00c853] flex items-center justify-center"><CreditCard className="h-5 w-5" /></div>
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+          <div className="flex items-start gap-3 mb-6">
+            <div className="h-10 w-10 rounded-lg bg-green-50 text-[#00c853] flex items-center justify-center">
+              <CreditCard className="h-5 w-5" />
+            </div>
             <div className="flex-1">
-              <h2 className="text-base font-semibold text-slate-900">Plan & billing</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Manage your subscription.</p>
+              <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Plan & billing</h2>
+              <p className="text-sm text-slate-500 mt-0.5">Manage your subscription.</p>
             </div>
           </div>
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 text-white">
@@ -153,7 +282,7 @@ function SettingsPage() {
             </div>
           </div>
           <ul className="mt-5 space-y-2 text-sm text-slate-700">
-            {["Unlimited WhatsApp conversations", "Real-time AI message monitoring", "Up to 5 team members", "Webhook integrations (n8n, Zapier)", "Priority email support"].map((f) => (
+            {["Unlimited WhatsApp conversations","Real-time AI message monitoring","Up to 5 team members","Webhook integrations (n8n, Zapier)","Priority email support"].map((f) => (
               <li key={f} className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-[#00c853]" /> {f}
               </li>
@@ -162,15 +291,17 @@ function SettingsPage() {
         </section>
 
         {/* Danger */}
-        <section className="bg-white rounded-2xl border border-red-200 shadow-sm p-6">
+        <section className="bg-white rounded-2xl border border-red-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7">
           <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><AlertTriangle className="h-5 w-5" /></div>
+            <div className="h-10 w-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Danger zone</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Irreversible actions.</p>
+              <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Danger zone</h2>
+              <p className="text-sm text-slate-500 mt-0.5">Irreversible actions.</p>
             </div>
           </div>
-          <div className="flex items-center justify-between flex-wrap gap-3 bg-red-50/50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center justify-between flex-wrap gap-3 bg-red-50/50 border border-red-200 rounded-xl p-4">
             <div>
               <div className="text-sm font-semibold text-slate-900">Delete account</div>
               <div className="text-xs text-slate-600 mt-0.5">Permanently delete your workspace and all message data.</div>
