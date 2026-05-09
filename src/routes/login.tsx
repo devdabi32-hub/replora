@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — WA Monitor" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Chatora" }] }),
   component: LoginPage,
 });
 
@@ -40,45 +40,48 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
+          <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/30 mb-3">
             <MessageCircle className="h-6 w-6 text-white" />
+            <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-black border border-white/10 flex items-center justify-center">
+              <Eye className="h-3 w-3 text-[#00c853]" />
+            </span>
           </div>
-          <div className="text-xl font-semibold text-slate-900">WA Monitor</div>
-          <div className="text-sm text-slate-500">AI Agent Portal</div>
+          <div className="text-xl font-semibold text-white">Chatora</div>
+          <div className="text-sm text-white/60">Your AI talks. You watch.</div>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-          <h1 className="text-2xl font-semibold text-slate-900 mb-1">Welcome back</h1>
-          <p className="text-sm text-slate-500 mb-6">Sign in to your account</p>
+        <div className="bg-white/5 rounded-2xl shadow-xl border border-white/10 p-8">
+          <h1 className="text-2xl font-semibold text-white mb-1">Welcome back</h1>
+          <p className="text-sm text-white/60 mb-6">Sign in to your account</p>
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-slate-700">Email</label>
+              <label className="text-xs font-medium text-white/80">Email</label>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm" />
+                className="mt-1 w-full h-11 px-3 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm" />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-700">Password</label>
+              <label className="text-xs font-medium text-white/80">Password</label>
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm" />
+                className="mt-1 w-full h-11 px-3 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm" />
             </div>
-            {error && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+            {error && <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</div>}
             <button disabled={loading} type="submit"
               className="w-full h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
               {loading && <Loader2 className="h-4 w-4 animate-spin" />} Sign in
             </button>
           </form>
           <div className="flex items-center gap-3 my-5">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">or</span>
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-[11px] uppercase tracking-wider text-white/50 font-medium">or</span>
+            <div className="h-px flex-1 bg-white/10" />
           </div>
           <button
             type="button"
             onClick={signInWithGoogle}
             disabled={googleLoading}
-            className="w-full h-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60"
+            className="w-full h-11 rounded-lg border border-white/15 bg-white/5 hover:bg-white/5 text-white/80 text-sm font-medium flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60"
           >
             {googleLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -92,8 +95,8 @@ function LoginPage() {
             )}
             Continue with Google
           </button>
-          <div className="text-center text-sm text-slate-500 mt-6">
-            New to WA Monitor?{" "}
+          <div className="text-center text-sm text-white/60 mt-6">
+            New to Chatora?{" "}
             <Link to="/signup" className="text-[#0084ff] font-medium hover:underline">Start free trial</Link>
           </div>
         </div>
