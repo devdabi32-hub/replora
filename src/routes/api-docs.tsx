@@ -124,10 +124,10 @@ function DocsView() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Mobile top bar */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <span className="font-semibold text-slate-900">API Docs</span>
+      <div className="lg:hidden sticky top-0 z-30 bg-black border-b border-white/10 px-4 py-3 flex items-center justify-between">
+        <span className="font-semibold text-white">API Docs</span>
         <button
           onClick={() => setMobileOpen((o) => !o)}
           className="p-2 rounded-md hover:bg-slate-100"
@@ -146,12 +146,12 @@ function DocsView() {
               Developer
             </div>
             <h2 className="text-white text-lg font-semibold mt-1">API Reference</h2>
-            <p className="text-xs text-slate-400 mt-1">v1.0 · REST · Webhooks</p>
+            <p className="text-xs text-white/50 mt-1">v1.0 · REST · Webhooks</p>
           </div>
           <nav className="px-3 py-5 space-y-6">
             {NAV.map((group) => (
               <div key={group.title}>
-                <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/60">
                   {group.title}
                 </div>
                 <div className="space-y-0.5">
@@ -164,7 +164,7 @@ function DocsView() {
                         className={`w-full text-left px-3 py-1.5 text-[13px] rounded-md transition-all ${
                           isActive
                             ? "bg-[#0084ff]/10 text-[#0084ff] font-medium border-l-2 border-[#0084ff] pl-[10px]"
-                            : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
+                            : "text-white/50 hover:text-white hover:bg-black/[0.03]"
                         }`}
                       >
                         {item.label}
@@ -199,7 +199,7 @@ function DocsView() {
             <N8nNode />
             <Postman />
             <Faq />
-            <div className="border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
+            <div className="border-t border-white/10 pt-8 text-center text-xs text-white/50">
               Need help? Email support@wamonitor.io
             </div>
           </div>
@@ -231,9 +231,9 @@ function Section({
           {eyebrow}
         </div>
       )}
-      <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h2>
-      {subtitle && <p className="mt-3 text-base text-slate-600 leading-relaxed">{subtitle}</p>}
-      <div className="mt-6 space-y-5 text-[15px] text-slate-700 leading-relaxed">{children}</div>
+      <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
+      {subtitle && <p className="mt-3 text-base text-white/70 leading-relaxed">{subtitle}</p>}
+      <div className="mt-6 space-y-5 text-[15px] text-white/80 leading-relaxed">{children}</div>
     </section>
   );
 }
@@ -264,13 +264,13 @@ function CodeBlock({
           <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
-          <span className="ml-3 text-[11px] font-mono text-slate-400">
+          <span className="ml-3 text-[11px] font-mono text-white/50">
             {title ?? language}
           </span>
         </div>
         <button
           onClick={copy}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-slate-400 hover:text-white rounded-md hover:bg-white/[0.06] transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-white/50 hover:text-white rounded-md hover:bg-black/[0.06] transition-all"
         >
           {copied ? (
             <>
@@ -345,14 +345,14 @@ function ParamTable({
   rows: string[][];
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
+    <div className="overflow-x-auto rounded-lg border border-white/10">
       <table className="w-full text-sm">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-white/5 border-b border-white/10">
           <tr>
             {headers.map((h) => (
               <th
                 key={h}
-                className="px-4 py-2.5 text-left font-semibold text-slate-700 text-[12px] uppercase tracking-wider"
+                className="px-4 py-2.5 text-left font-semibold text-white/80 text-[12px] uppercase tracking-wider"
               >
                 {h}
               </th>
@@ -361,9 +361,9 @@ function ParamTable({
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-b border-slate-100 last:border-0">
+            <tr key={i} className="border-b border-white/10 last:border-0">
               {r.map((c, j) => (
-                <td key={j} className="px-4 py-2.5 align-top text-slate-700">
+                <td key={j} className="px-4 py-2.5 align-top text-white/80">
                   {j === 0 ? (
                     <code className="text-[12.5px] font-mono text-[#0084ff] bg-blue-50 px-1.5 py-0.5 rounded">
                       {c}
@@ -416,13 +416,13 @@ function Introduction() {
         ].map((f) => (
           <div
             key={f.title}
-            className="rounded-xl border border-slate-200 p-5 hover:border-[#0084ff] hover:shadow-md transition-all"
+            className="rounded-xl border border-white/10 p-5 hover:border-[#0084ff] hover:shadow-md transition-all"
           >
             <div className="h-9 w-9 rounded-lg bg-blue-50 text-[#0084ff] flex items-center justify-center mb-3">
               <f.icon className="h-4.5 w-4.5" />
             </div>
-            <div className="font-semibold text-slate-900 text-[14px]">{f.title}</div>
-            <div className="text-[13px] text-slate-500 mt-1 leading-relaxed">{f.desc}</div>
+            <div className="font-semibold text-white text-[14px]">{f.title}</div>
+            <div className="text-[13px] text-white/60 mt-1 leading-relaxed">{f.desc}</div>
           </div>
         ))}
       </div>
@@ -475,7 +475,7 @@ function QuickStart() {
             <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[#0084ff] text-white text-xs font-bold flex items-center justify-center">
               {i + 1}
             </span>
-            <span className="text-[14px] text-slate-700">{t}</span>
+            <span className="text-[14px] text-white/80">{t}</span>
           </li>
         ))}
       </ol>
@@ -616,14 +616,14 @@ function Step({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-5 space-y-3 hover:border-slate-300 transition-colors">
+    <div className="rounded-xl border border-white/10 p-5 space-y-3 hover:border-white/15 transition-colors">
       <div className="flex items-center gap-3">
         <span className="h-7 w-7 rounded-full bg-[#0084ff] text-white text-xs font-bold flex items-center justify-center">
           {n}
         </span>
-        <h3 className="font-semibold text-slate-900 text-[15px]">{title}</h3>
+        <h3 className="font-semibold text-white text-[15px]">{title}</h3>
       </div>
-      <div className="pl-10 text-[14px] text-slate-700 space-y-3">{children}</div>
+      <div className="pl-10 text-[14px] text-white/80 space-y-3">{children}</div>
     </div>
   );
 }
@@ -716,12 +716,12 @@ function TestWebhook() {
       title="Test Your Webhook"
       subtitle="Fire a test request to verify your setup end to end."
     >
-      <div className="rounded-xl border border-slate-200 p-5 space-y-4">
+      <div className="rounded-xl border border-white/10 p-5 space-y-4">
         <Field label="Webhook URL">
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none font-mono"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none font-mono"
           />
         </Field>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -729,14 +729,14 @@ function TestWebhook() {
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none"
             />
           </Field>
           <Field label="Message">
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none"
             />
           </Field>
         </div>
@@ -783,7 +783,7 @@ function TestWebhook() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5 block">
+      <span className="text-[12px] font-semibold uppercase tracking-wider text-white/60 mb-1.5 block">
         {label}
       </span>
       {children}
@@ -1044,17 +1044,17 @@ function Troubleshooting() {
         {items.map((it) => (
           <div
             key={it.err}
-            className="rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors"
+            className="rounded-xl border border-white/10 p-4 hover:border-white/15 transition-colors"
           >
             <div className="flex items-start gap-2">
               <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
                 Error
               </span>
-              <div className="font-semibold text-slate-900 text-[14px]">{it.err}</div>
+              <div className="font-semibold text-white text-[14px]">{it.err}</div>
             </div>
             <div className="mt-2 flex items-start gap-2">
               <Check className="h-4 w-4 text-[#00c853] mt-0.5 shrink-0" />
-              <div className="text-[14px] text-slate-700">{it.fix}</div>
+              <div className="text-[14px] text-white/80">{it.fix}</div>
             </div>
           </div>
         ))}
@@ -1066,18 +1066,18 @@ function Troubleshooting() {
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden">
+    <div className="border border-white/10 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
       >
-        <span className="font-medium text-slate-900 text-[14px]">{q}</span>
+        <span className="font-medium text-white text-[14px]">{q}</span>
         <ChevronDown
-          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-white/50 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <div className="px-4 pb-4 text-[14px] text-slate-600 leading-relaxed">{a}</div>
+        <div className="px-4 pb-4 text-[14px] text-white/70 leading-relaxed">{a}</div>
       )}
     </div>
   );
