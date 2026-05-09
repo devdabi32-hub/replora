@@ -49,7 +49,7 @@ function LoginPage() {
           <div className="text-xl font-semibold text-white">Chatora</div>
           <div className="text-sm text-white/60">Your AI talks. You watch.</div>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl border border-white/10 p-8">
+        <div className="bg-white/5 rounded-2xl shadow-xl border border-white/10 p-8">
           <h1 className="text-2xl font-semibold text-white mb-1">Welcome back</h1>
           <p className="text-sm text-white/60 mb-6">Sign in to your account</p>
           <form onSubmit={submit} className="space-y-4">
@@ -78,7 +78,7 @@ function LoginPage() {
             type="button"
             onClick={signInWithGoogle}
             disabled={googleLoading}
-            className="w-full h-11 rounded-lg border border-white/15 bg-white hover:bg-white/5 text-white/80 text-sm font-medium flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60"
+            className="w-full h-11 rounded-lg border border-white/15 bg-white/5 hover:bg-white/5/5 text-white/80 text-sm font-medium flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60"
           >
             {googleLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

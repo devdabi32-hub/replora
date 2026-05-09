@@ -43,7 +43,7 @@ function SignupPage() {
           <div className="text-xl font-semibold text-white">Chatora</div>
           <div className="text-sm text-white/60">Your AI talks. You watch.</div>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl border border-white/10 p-8">
+        <div className="bg-white/5 rounded-2xl shadow-xl border border-white/10 p-8">
           <h1 className="text-2xl font-semibold text-white mb-1">Create your account</h1>
           <p className="text-sm text-white/60 mb-6">Start your free trial</p>
           <form onSubmit={submit} className="space-y-4">

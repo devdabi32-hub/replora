@@ -157,7 +157,7 @@ function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-white/10 p-8">
+        <div className="bg-white/5 rounded-2xl shadow-sm border border-white/10 p-8">
           {step === 1 && (
             <>
               <h1 className="text-2xl font-semibold text-white mb-1">
@@ -197,7 +197,7 @@ function OnboardingPage() {
                   <select
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm bg-white"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm bg-white/5"
                   >
                     <option value="">Select your industry</option>
                     {INDUSTRIES.map((i) => (
@@ -223,7 +223,7 @@ function OnboardingPage() {
                           className={`text-left px-4 py-3 rounded-lg border-2 transition-all ${
                             active
                               ? "border-[#0084ff] bg-[#0084ff]/15"
-                              : "border-white/10 hover:border-white/15 bg-white"
+                              : "border-white/10 hover:border-white/15 bg-white/5"
                           }`}
                         >
                           <div className="text-sm font-medium text-white">{t.label}</div>
@@ -271,12 +271,12 @@ function OnboardingPage() {
                       className={`text-left px-4 py-4 rounded-lg border-2 transition-all flex items-start gap-3 ${
                         active
                           ? "border-[#0084ff] bg-[#0084ff]/15"
-                          : "border-white/10 hover:border-white/15 bg-white"
+                          : "border-white/10 hover:border-white/15 bg-white/5"
                       }`}
                     >
                       <div
                         className={`h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0 ${
-                          active ? "bg-[#0084ff] text-white" : "bg-white/10 text-white/70"
+                          active ? "bg-[#0084ff] text-white" : "bg-white/5/10 text-white/70"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -292,7 +292,7 @@ function OnboardingPage() {
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={() => setStep(1)}
-                  className="h-11 px-4 rounded-lg border border-white/15 text-white/80 hover:bg-white/5 text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="h-11 px-4 rounded-lg border border-white/15 text-white/80 hover:bg-white/5/5 text-sm font-medium flex items-center gap-2 transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
@@ -318,7 +318,7 @@ function OnboardingPage() {
               <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-2">
                 Your unique API key
               </div>
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 bg-white/5/5 border border-white/10 rounded-lg p-3">
                 <code className="flex-1 text-xs text-white/90 break-all font-mono">
                   {apiKey}
                 </code>
@@ -352,7 +352,7 @@ function OnboardingPage() {
               <div className="flex flex-col sm:flex-row items-stretch gap-3 mt-8">
                 <Link
                   to="/api-docs"
-                  className="flex-1 h-11 rounded-lg border border-white/15 text-white/80 hover:bg-white/5 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1 h-11 rounded-lg border border-white/15 text-white/80 hover:bg-white/5/5 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >
                   View full setup guide
                 </Link>

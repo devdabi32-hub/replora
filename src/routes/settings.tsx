@@ -133,7 +133,7 @@ function SettingsPage() {
         </div>
 
         {/* API Keys */}
-        <section className="bg-white rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+        <section className="bg-white/5 rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
           <div className="flex items-start gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center">
               <KeyRound className="h-5 w-5" />
@@ -150,13 +150,13 @@ function SettingsPage() {
             Secret API key
           </label>
           <div className="mt-2 flex flex-col sm:flex-row items-stretch gap-2">
-            <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 font-mono text-xs text-white/90 break-all flex items-center">
+            <div className="flex-1 bg-white/5/5 border border-white/10 rounded-lg px-3 py-2.5 font-mono text-xs text-white/90 break-all flex items-center">
               {secret || "Loading…"}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={copy}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white border border-white/10 hover:bg-white/5 text-white/80 text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/5/5 text-white/80 text-xs font-semibold transition-colors"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copied ? "Copied" : "Copy"}
@@ -164,7 +164,7 @@ function SettingsPage() {
               <button
                 onClick={regenerate}
                 disabled={regenerating}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/10 hover:bg-white/10 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/5/10 hover:bg-white/5/10 text-white text-xs font-semibold transition-colors disabled:opacity-60"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${regenerating ? "animate-spin" : ""}`} />
                 Regenerate
@@ -176,7 +176,7 @@ function SettingsPage() {
             <Info className="h-4 w-4 text-[#0084ff] mt-0.5 shrink-0" />
             <p className="text-[13px] text-white/80 leading-relaxed">
               This is your unique API key. Add it to your n8n workflow as the{" "}
-              <code className="font-mono bg-white border border-white/10 px-1.5 py-0.5 rounded text-[11px] text-white/90">
+              <code className="font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[11px] text-white/90">
                 x-wa-secret
               </code>{" "}
               header. Never share this key publicly.
@@ -192,7 +192,7 @@ function SettingsPage() {
         </section>
 
         {/* Agency Profile */}
-        <section className="bg-white rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+        <section className="bg-white/5 rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
           <div className="flex items-start gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-purple-500/15 text-purple-600 flex items-center justify-center">
               <User className="h-5 w-5" />
@@ -204,7 +204,7 @@ function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="bg-white/5/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="text-[11px] text-white/60 uppercase tracking-wider font-semibold">
                   Agency name
@@ -228,7 +228,7 @@ function SettingsPage() {
                       if (e.key === "Enter") saveAgency();
                       if (e.key === "Escape") { setEditingAgency(false); setAgencyDraft(agency); }
                     }}
-                    className="flex-1 h-9 px-3 rounded-md border border-white/15 bg-white text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0084ff]/30 focus:border-[#0084ff]"
+                    className="flex-1 h-9 px-3 rounded-md border border-white/15 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0084ff]/30 focus:border-[#0084ff]"
                   />
                   <button
                     onClick={saveAgency}
@@ -239,7 +239,7 @@ function SettingsPage() {
                   </button>
                   <button
                     onClick={() => { setEditingAgency(false); setAgencyDraft(agency); }}
-                    className="px-3 h-9 rounded-md bg-white border border-white/10 hover:bg-white/5 text-white/80 text-xs font-medium"
+                    className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5/5 text-white/80 text-xs font-medium"
                   >
                     Cancel
                   </button>
@@ -248,7 +248,7 @@ function SettingsPage() {
                 <div className="text-sm font-medium text-white">{agency || "—"}</div>
               )}
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="bg-white/5/5 border border-white/10 rounded-xl p-4">
               <div className="text-[11px] text-white/60 uppercase tracking-wider font-semibold">Email</div>
               <div className="text-sm font-medium text-white mt-1.5">{email}</div>
             </div>
@@ -256,7 +256,7 @@ function SettingsPage() {
         </section>
 
         {/* Plan */}
-        <section className="bg-white rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+        <section className="bg-white/5 rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
           <div className="flex items-start gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-[#00c853]/15 text-[#00c853] flex items-center justify-center">
               <CreditCard className="h-5 w-5" />
@@ -291,7 +291,7 @@ function SettingsPage() {
         </section>
 
         {/* Danger */}
-        <section className="bg-white rounded-2xl border border-red-500/30 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7">
+        <section className="bg-white/5 rounded-2xl border border-red-500/30 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7">
           <div className="flex items-start gap-3 mb-5">
             <div className="h-10 w-10 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5" />
@@ -308,7 +308,7 @@ function SettingsPage() {
             </div>
             {confirmDelete ? (
               <div className="flex items-center gap-2">
-                <button onClick={() => setConfirmDelete(false)} className="px-3 h-9 rounded-md bg-white border border-white/10 hover:bg-white/5 text-white/80 text-xs font-medium">Cancel</button>
+                <button onClick={() => setConfirmDelete(false)} className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5/5 text-white/80 text-xs font-medium">Cancel</button>
                 <button onClick={deleteAccount} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">
                   <Trash2 className="h-3.5 w-3.5" /> Confirm delete
                 </button>
