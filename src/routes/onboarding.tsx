@@ -124,7 +124,7 @@ function OnboardingPage() {
   const skip = () => navigate({ to: "/inbox" });
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] px-4 py-10">
+    <div className="min-h-screen bg-black px-4 py-10">
       <div className="max-w-[560px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -132,11 +132,11 @@ function OnboardingPage() {
             <div className="h-8 w-8 rounded-lg bg-[#0084ff] flex items-center justify-center">
               <Eye className="h-4 w-4 text-white" />
             </div>
-            <span className="font-semibold text-slate-900">Chatora</span>
+            <span className="font-semibold text-white">Chatora</span>
           </div>
           <button
             onClick={skip}
-            className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
+            className="text-sm text-white/60 hover:text-white transition-colors"
           >
             Skip
           </button>
@@ -144,7 +144,7 @@ function OnboardingPage() {
 
         {/* Progress */}
         <div className="mb-6">
-          <div className="flex justify-between text-xs font-medium text-slate-500 mb-2">
+          <div className="flex justify-between text-xs font-medium text-white/60 mb-2">
             <span>Step {step} of 3</span>
             <span>{Math.round((step / 3) * 100)}%</span>
           </div>
@@ -157,47 +157,47 @@ function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-white/10 p-8">
           {step === 1 && (
             <>
-              <h1 className="text-2xl font-semibold text-slate-900 mb-1">
+              <h1 className="text-2xl font-semibold text-white mb-1">
                 Tell us about your business
               </h1>
-              <p className="text-sm text-slate-500 mb-6">
+              <p className="text-sm text-white/60 mb-6">
                 Help us personalise your experience
               </p>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-slate-700">
+                  <label className="text-xs font-medium text-white/80">
                     Organisation Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="Automateup Agency"
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-slate-700">Website</label>
+                  <label className="text-xs font-medium text-white/80">Website</label>
                   <input
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     placeholder="https://yourwebsite.com"
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-slate-700">
+                  <label className="text-xs font-medium text-white/80">
                     Industry <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-300 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none text-sm bg-white"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm bg-white"
                   >
                     <option value="">Select your industry</option>
                     {INDUSTRIES.map((i) => (
@@ -209,7 +209,7 @@ function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-slate-700">
+                  <label className="text-xs font-medium text-white/80">
                     Team Size <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -222,12 +222,12 @@ function OnboardingPage() {
                           onClick={() => setTeamSize(t.id)}
                           className={`text-left px-4 py-3 rounded-lg border-2 transition-all ${
                             active
-                              ? "border-[#0084ff] bg-blue-50/60"
-                              : "border-slate-200 hover:border-slate-300 bg-white"
+                              ? "border-[#0084ff] bg-[#0084ff]/15"
+                              : "border-white/10 hover:border-white/15 bg-white"
                           }`}
                         >
-                          <div className="text-sm font-medium text-slate-900">{t.label}</div>
-                          <div className="text-xs text-slate-500">{t.hint}</div>
+                          <div className="text-sm font-medium text-white">{t.label}</div>
+                          <div className="text-xs text-white/60">{t.hint}</div>
                         </button>
                       );
                     })}
@@ -236,7 +236,7 @@ function OnboardingPage() {
               </div>
 
               {error && (
-                <div className="mt-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <div className="mt-4 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
                   {error}
                 </div>
               )}
@@ -254,10 +254,10 @@ function OnboardingPage() {
 
           {step === 2 && (
             <>
-              <h1 className="text-2xl font-semibold text-slate-900 mb-1">
+              <h1 className="text-2xl font-semibold text-white mb-1">
                 How will you use Chatora?
               </h1>
-              <p className="text-sm text-slate-500 mb-6">Select all that apply</p>
+              <p className="text-sm text-white/60 mb-6">Select all that apply</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {USE_CASES.map((u) => {
@@ -270,18 +270,18 @@ function OnboardingPage() {
                       onClick={() => toggleUseCase(u.id)}
                       className={`text-left px-4 py-4 rounded-lg border-2 transition-all flex items-start gap-3 ${
                         active
-                          ? "border-[#0084ff] bg-blue-50/60"
-                          : "border-slate-200 hover:border-slate-300 bg-white"
+                          ? "border-[#0084ff] bg-[#0084ff]/15"
+                          : "border-white/10 hover:border-white/15 bg-white"
                       }`}
                     >
                       <div
                         className={`h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0 ${
-                          active ? "bg-[#0084ff] text-white" : "bg-slate-100 text-slate-600"
+                          active ? "bg-[#0084ff] text-white" : "bg-white/10 text-white/70"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
                       </div>
-                      <div className="text-sm font-medium text-slate-900 pt-1.5">
+                      <div className="text-sm font-medium text-white pt-1.5">
                         {u.label}
                       </div>
                     </button>
@@ -292,7 +292,7 @@ function OnboardingPage() {
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={() => setStep(1)}
-                  className="h-11 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="h-11 px-4 rounded-lg border border-white/15 text-white/80 hover:bg-white/5 text-sm font-medium flex items-center gap-2 transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
@@ -308,18 +308,18 @@ function OnboardingPage() {
 
           {step === 3 && (
             <>
-              <h1 className="text-2xl font-semibold text-slate-900 mb-1">
+              <h1 className="text-2xl font-semibold text-white mb-1">
                 You're almost ready! 🎉
               </h1>
-              <p className="text-sm text-slate-500 mb-6">
+              <p className="text-sm text-white/60 mb-6">
                 Connect your n8n workflow to start monitoring conversations
               </p>
 
-              <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+              <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-2">
                 Your unique API key
               </div>
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <code className="flex-1 text-xs text-slate-800 break-all font-mono">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-3">
+                <code className="flex-1 text-xs text-white/90 break-all font-mono">
                   {apiKey}
                 </code>
                 <button
@@ -339,11 +339,11 @@ function OnboardingPage() {
                   "Send a test message",
                 ].map((text, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-blue-50 text-[#0084ff] text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="h-6 w-6 rounded-full bg-[#0084ff]/15 text-[#0084ff] text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
                       {i + 1}
                     </div>
-                    <div className="text-sm text-slate-700 pt-0.5">
-                      <span className="font-medium text-slate-900">Step {i + 1}:</span> {text}
+                    <div className="text-sm text-white/80 pt-0.5">
+                      <span className="font-medium text-white">Step {i + 1}:</span> {text}
                     </div>
                   </div>
                 ))}
@@ -352,7 +352,7 @@ function OnboardingPage() {
               <div className="flex flex-col sm:flex-row items-stretch gap-3 mt-8">
                 <Link
                   to="/api-docs"
-                  className="flex-1 h-11 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1 h-11 rounded-lg border border-white/15 text-white/80 hover:bg-white/5 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >
                   View full setup guide
                 </Link>

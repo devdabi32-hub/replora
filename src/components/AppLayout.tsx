@@ -54,11 +54,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!authChecked) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-slate-500 text-sm">Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-black text-white/60 text-sm">Loading…</div>;
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-[#f8fafc] text-slate-900">
+    <div className="flex min-h-screen w-full bg-black text-white">
       <aside className="hidden md:flex w-64 flex-col bg-[#0f1117] text-slate-200 fixed inset-y-0 left-0 z-20">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.06]">
@@ -70,13 +70,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">Chatora</div>
-            <div className="text-[11px] text-slate-500 mt-0.5">Your AI talks. You watch.</div>
+            <div className="text-[11px] text-white/60 mt-0.5">Your AI talks. You watch.</div>
           </div>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1">
-          <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Main</div>
+          <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/60">Main</div>
           {nav.map((n) => {
             const Icon = n.icon;
             const active = pathname.startsWith(n.to);
@@ -87,7 +87,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                   active
                     ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
-                    : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
+                    : "text-white/50 hover:bg-white/[0.04] hover:text-white"
                 }`}
               >
                 <Icon className="h-[18px] w-[18px]" />
@@ -103,13 +103,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
 
-          <div className="px-3 pt-6 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">System</div>
+          <div className="px-3 pt-6 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/60">System</div>
           <Link
             to="/settings"
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
               pathname.startsWith("/settings")
                 ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
-                : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
+                : "text-white/50 hover:bg-white/[0.04] hover:text-white"
             }`}
           >
             <Settings className="h-[18px] w-[18px]" />
@@ -120,7 +120,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
               pathname.startsWith("/api-docs")
                 ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
-                : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
+                : "text-white/50 hover:bg-white/[0.04] hover:text-white"
             }`}
           >
             <Code2 className="h-[18px] w-[18px]" />
@@ -139,9 +139,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-white truncate">Admin</div>
-              <div className="text-[11px] text-slate-500 truncate">{userEmail}</div>
+              <div className="text-[11px] text-white/60 truncate">{userEmail}</div>
             </div>
-            <button onClick={signOut} title="Sign out" className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+            <button onClick={signOut} title="Sign out" className="p-1.5 rounded-md hover:bg-white/10 text-white/50 hover:text-white transition-colors">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
