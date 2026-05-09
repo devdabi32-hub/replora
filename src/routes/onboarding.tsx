@@ -199,9 +199,9 @@ function OnboardingPage() {
                     onChange={(e) => setIndustry(e.target.value)}
                     className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   >
-                    <option value="">Select your industry</option>
+                    <option value="" className="bg-[#0f1117] text-white">Select your industry</option>
                     {INDUSTRIES.map((i) => (
-                      <option key={i} value={i}>
+                      <option key={i} value={i} className="bg-[#0f1117] text-white">
                         {i}
                       </option>
                     ))}
