@@ -92,9 +92,19 @@ function OnboardingPage() {
     if (!userId || !step1Valid) return;
     setSaving(true);
     setError(null);
+    const { data: userData, error: userErr } = await supabase
+      .from("users")
+      .select("agency_id")
+      .eq("id", userId)
+      .single();
+    if (userErr || !userData?.agency_id) {
+      setError("Could not find your agency. Please try logging out and back in.");
+      setSaving(false);
+      return;
+    }
     const { error: err } = await supabase.from("business_profiles").upsert(
       {
-        agency_id: userId,
+        agency_id: userData.agency_id,
         organisation_name: orgName.trim(),
         website: website.trim() || null,
         industry,
@@ -103,10 +113,7 @@ function OnboardingPage() {
       { onConflict: "agency_id" },
     );
     setSaving(false);
-    if (err) {
-      setError(err.message);
-      return;
-    }
+    if (err) { setError(err.message); return; }
     setStep(2);
   };
 
