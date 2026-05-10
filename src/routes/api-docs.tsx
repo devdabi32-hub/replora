@@ -130,7 +130,7 @@ function DocsView() {
         <span className="font-semibold text-white">API Docs</span>
         <button
           onClick={() => setMobileOpen((o) => !o)}
-          className="p-2 rounded-md hover:bg-slate-100"
+          className="p-2 rounded-md hover:bg-white/10 text-white"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -325,9 +325,9 @@ function Callout({
   title?: string;
 }) {
   const styles = {
-    info: "bg-blue-50 border-blue-200 text-blue-900",
-    success: "bg-green-50 border-green-200 text-green-900",
-    warning: "bg-amber-50 border-amber-200 text-amber-900",
+    info: "bg-[#0084ff]/10 border-[#0084ff]/30 text-white/90",
+    success: "bg-[#00c853]/10 border-[#00c853]/30 text-white/90",
+    warning: "bg-amber-500/10 border-amber-500/30 text-amber-100",
   }[variant];
   return (
     <div className={`rounded-lg border ${styles} px-4 py-3 text-sm`}>
@@ -365,7 +365,7 @@ function ParamTable({
               {r.map((c, j) => (
                 <td key={j} className="px-4 py-2.5 align-top text-white/80">
                   {j === 0 ? (
-                    <code className="text-[12.5px] font-mono text-[#0084ff] bg-blue-50 px-1.5 py-0.5 rounded">
+                    <code className="text-[12.5px] font-mono text-[#0084ff] bg-[#0084ff]/15 px-1.5 py-0.5 rounded">
                       {c}
                     </code>
                   ) : (
@@ -418,7 +418,7 @@ function Introduction() {
             key={f.title}
             className="rounded-xl border border-white/10 p-5 hover:border-[#0084ff] hover:shadow-md transition-all"
           >
-            <div className="h-9 w-9 rounded-lg bg-blue-50 text-[#0084ff] flex items-center justify-center mb-3">
+            <div className="h-9 w-9 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center mb-3">
               <f.icon className="h-4.5 w-4.5" />
             </div>
             <div className="font-semibold text-white text-[14px]">{f.title}</div>
@@ -520,7 +520,7 @@ function WebhookOverview() {
       <ul className="list-disc pl-5 space-y-1.5 text-[14px]">
         <li>One stable URL per agency.</li>
         <li>Accepts JSON via HTTPS POST only.</li>
-        <li>Returns <code className="font-mono text-[13px] bg-slate-100 px-1 rounded">200</code> on success, <code className="font-mono text-[13px] bg-slate-100 px-1 rounded">4xx</code> on auth or schema errors.</li>
+        <li>Returns <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 rounded">200</code> on success, <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 rounded">4xx</code> on auth or schema errors.</li>
       </ul>
       <CodeBlock language="bash" title="endpoint" code={`POST ${WEBHOOK_BASE}`} />
     </Section>
@@ -537,7 +537,7 @@ function ConnectN8n() {
     >
       <Step n={1} title="Get your Secret API Key">
         Go to <strong>Settings → API Keys</strong> and copy your{" "}
-        <code className="font-mono text-[13px] bg-slate-100 px-1.5 py-0.5 rounded">wam_sk_</code> key.
+        <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 py-0.5 rounded">wam_sk_</code> key.
       </Step>
       <Step n={2} title="Add an HTTP Request node">
         Add an <strong>HTTP Request</strong> node after your WhatsApp Trigger in n8n.
@@ -666,7 +666,7 @@ function ConnectZapier() {
     >
       <Step n={1} title="Add a 'Webhooks by Zapier → POST' action" />
       <Step n={2} title="Set the URL and headers">
-        URL: <code className="font-mono text-[13px] bg-slate-100 px-1.5 py-0.5 rounded">{WEBHOOK_BASE}</code>
+        URL: <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 py-0.5 rounded break-all">{WEBHOOK_BASE}</code>
       </Step>
       <Step n={3} title="Map data fields from your WhatsApp trigger">
         Match the body shape described in the Message Object section.
@@ -721,7 +721,7 @@ function TestWebhook() {
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none font-mono"
+            className="w-full px-3 py-2 text-sm rounded-lg bg-[#0B141A] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none font-mono"
           />
         </Field>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -729,14 +729,14 @@ function TestWebhook() {
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none"
+              className="w-full px-3 py-2 text-sm rounded-lg bg-[#0B141A] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none"
             />
           </Field>
           <Field label="Message">
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-100 outline-none"
+              className="w-full px-3 py-2 text-sm rounded-lg bg-[#0B141A] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none"
             />
           </Field>
         </div>
@@ -751,8 +751,8 @@ function TestWebhook() {
           <div
             className={`rounded-lg px-4 py-3 text-sm font-mono ${
               response.ok
-                ? "bg-green-50 text-green-800 border border-green-200"
-                : "bg-red-50 text-red-800 border border-red-200"
+                ? "bg-[#00c853]/10 text-[#00c853] border border-[#00c853]/30"
+                : "bg-red-500/10 text-red-300 border border-red-500/30"
             }`}
           >
             <div className="font-semibold text-[12px] uppercase tracking-wider mb-1">
@@ -1047,7 +1047,7 @@ function Troubleshooting() {
             className="rounded-xl border border-white/10 p-4 hover:border-white/15 transition-colors"
           >
             <div className="flex items-start gap-2">
-              <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
+              <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/30">
                 Error
               </span>
               <div className="font-semibold text-white text-[14px]">{it.err}</div>
