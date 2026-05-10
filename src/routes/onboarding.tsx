@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   Eye,
@@ -48,13 +48,6 @@ const USE_CASES = [
   { id: "multi", label: "Manage multiple WhatsApp numbers", icon: Phone },
   { id: "human", label: "Human takeover when AI fails", icon: UserCog },
 ];
-
-function generateApiKey() {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let s = "";
-  for (let i = 0; i < 24; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return `wam_sk_${s}`;
-}
 
 function OnboardingPage() {
   const navigate = useNavigate();
