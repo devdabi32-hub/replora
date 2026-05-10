@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { KeyRound, Copy, Check, Plug, Sparkles, AlertTriangle } from "lucide-react";
+import { KeyRound, Copy, Check, Plug, Sparkles, AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/api-configuration")({
   head: () => ({ meta: [{ title: "API Configuration — Replora" }] }),
@@ -20,7 +20,6 @@ type ApiKey = {
   key: string;
   created: string;
   lastUsed: string;
-  status: "Active" | "Revoked";
 };
 
 function genKey() {
@@ -53,6 +52,8 @@ function ApiConfigPage() {
     } catch { return []; }
   });
   const [copied, setCopied] = useState(false);
+  const [visible, setVisible] = useState<Record<string, boolean>>({});
+  const [rowCopied, setRowCopied] = useState<string | null>(null);
 
   const persist = (next: ApiKey[]) => {
     setKeys(next);
@@ -69,7 +70,6 @@ function ApiConfigPage() {
       key: k,
       created: new Date().toISOString(),
       lastUsed: "Never",
-      status: "Active",
     };
     persist([row, ...keys]);
     setGenerated(k);
@@ -84,10 +84,13 @@ function ApiConfigPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const revoke = (id: string) => {
-    persist(keys.map((k) => k.id === id ? { ...k, status: "Revoked" } : k));
-    toast.success("Key revoked");
+  const toggleVisible = (id: string) => setVisible((v) => ({ ...v, [id]: !v[id] }));
+  const copyRow = async (id: string, key: string) => {
+    await navigator.clipboard.writeText(key);
+    setRowCopied(id);
+    setTimeout(() => setRowCopied(null), 1500);
   };
+  const mask = (k: string) => k.slice(0, 8) + "•".repeat(Math.max(0, k.length - 12)) + k.slice(-4);
 
   return (
     <div className="max-w-5xl mx-auto px-6 lg:px-10 py-10 space-y-10">
@@ -152,36 +155,35 @@ function ApiConfigPage() {
               <thead className="bg-white/5 text-[11px] uppercase tracking-wider text-white/60">
                 <tr>
                   <th className="px-4 py-2.5 text-left">Project Name</th>
+                  <th className="px-4 py-2.5 text-left">API Key</th>
                   <th className="px-4 py-2.5 text-left">Created</th>
                   <th className="px-4 py-2.5 text-left">Last Used</th>
-                  <th className="px-4 py-2.5 text-left">Status</th>
-                  <th className="px-4 py-2.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {keys.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-10 text-center text-white/40 text-sm">No keys yet</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-10 text-center text-white/40 text-sm">No keys yet</td></tr>
                 )}
                 {keys.map((k) => (
                   <tr key={k.id} className="border-t border-white/5">
                     <td className="px-4 py-3 text-white">{k.name}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <code className="font-mono text-xs text-white/90 bg-[#0B141A] border border-white/10 rounded px-2 py-1 break-all">
+                          {visible[k.id] ? k.key : mask(k.key)}
+                        </code>
+                        <button onClick={() => toggleVisible(k.id)} title={visible[k.id] ? "Hide" : "Show"}
+                          className="h-7 w-7 rounded-md bg-white/10 hover:bg-white/15 border border-white/10 text-white/80 flex items-center justify-center">
+                          {visible[k.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        </button>
+                        <button onClick={() => copyRow(k.id, k.key)} title="Copy"
+                          className="h-7 w-7 rounded-md bg-white/10 hover:bg-white/15 border border-white/10 text-white/80 flex items-center justify-center">
+                          {rowCopied === k.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-white/70">{new Date(k.created).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-white/70">{k.lastUsed}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                        k.status === "Active"
-                          ? "bg-[#00c853]/15 text-[#00c853] border border-[#00c853]/30"
-                          : "bg-red-500/15 text-red-300 border border-red-500/30"
-                      }`}>{k.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {k.status === "Active" && (
-                        <button onClick={() => revoke(k.id)}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white">
-                          Revoke
-                        </button>
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,10 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   Eye,
-  Copy,
-  Check,
   ArrowRight,
   ArrowLeft,
   Loader2,
@@ -51,13 +49,6 @@ const USE_CASES = [
   { id: "human", label: "Human takeover when AI fails", icon: UserCog },
 ];
 
-function generateApiKey() {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let s = "";
-  for (let i = 0; i < 24; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return `wam_sk_${s}`;
-}
-
 function OnboardingPage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
@@ -71,10 +62,6 @@ function OnboardingPage() {
 
   // Step 2
   const [useCases, setUseCases] = useState<string[]>([]);
-
-  // Step 3
-  const apiKey = useMemo(() => generateApiKey(), []);
-  const [copied, setCopied] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,12 +105,6 @@ function OnboardingPage() {
   };
 
   const goStep3 = () => setStep(3);
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const toggleUseCase = (id: string) =>
     setUseCases((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -319,26 +300,10 @@ function OnboardingPage() {
                 You're almost ready! 🎉
               </h1>
               <p className="text-sm text-white/60 mb-6">
-                Connect your n8n workflow to start monitoring conversations
+                Connect your n8n workflow to start monitoring conversations. You'll find your API key in Settings after onboarding.
               </p>
 
-              <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-2">
-                Your unique API key
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-3">
-                <code className="flex-1 text-xs text-white/90 break-all font-mono">
-                  {apiKey}
-                </code>
-                <button
-                  onClick={copy}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-medium transition-colors"
-                >
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? "Copied" : "Copy"}
-                </button>
-              </div>
-
-              <div className="mt-6 space-y-3">
+              <div className="space-y-3">
                 {[
                   "Copy your API key above",
                   "Add HTTP Request node in n8n",
