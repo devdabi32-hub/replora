@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { MessageSquare, Users, Bot, Clock, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Chatora" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Replora" }] }),
   component: () => (
     <AppLayout>
       <DashboardPage />
@@ -122,8 +122,8 @@ function DashboardPage() {
     const total = phones.size || 1;
     return [
       { label: "Active today", count: active, pct: Math.round((active / total) * 100), color: "bg-[#00c853]", text: "text-[#00c853]" },
-      { label: "Idle (last 7 days)", count: idle, pct: Math.round((idle / total) * 100), color: "bg-amber-500", text: "text-amber-600" },
-      { label: "Dormant", count: dormant, pct: Math.round((dormant / total) * 100), color: "bg-slate-400", text: "text-slate-500" },
+      { label: "Idle (last 7 days)", count: idle, pct: Math.round((idle / total) * 100), color: "bg-amber-500", text: "text-amber-300" },
+      { label: "Dormant", count: dormant, pct: Math.round((dormant / total) * 100), color: "bg-white/30", text: "text-white/60" },
     ];
   }, [messages]);
 
@@ -136,36 +136,36 @@ function DashboardPage() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Real-time overview of your WhatsApp AI agent performance</p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Dashboard</h1>
+        <p className="text-sm text-white/60 mt-1">Real-time overview of your WhatsApp AI agent performance</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard label="Total Conversations" value={stats.conversations.toLocaleString()} icon={Users} iconBg="bg-blue-50" iconColor="text-[#0084ff]" change={stats.change} loading={loading} />
-        <MetricCard label="Total Messages" value={stats.total.toLocaleString()} icon={MessageSquare} iconBg="bg-purple-50" iconColor="text-purple-600" change={stats.change} loading={loading} />
-        <MetricCard label="AI Response Rate" value={`${stats.aiRate}%`} icon={Bot} iconBg="bg-green-50" iconColor="text-[#00c853]" change={5} loading={loading} />
-        <MetricCard label="Avg Response Time" value={fmtResponse(stats.avgResponse)} icon={Clock} iconBg="bg-orange-50" iconColor="text-orange-600" change={-12} loading={loading} inverted />
+        <MetricCard label="Total Conversations" value={stats.conversations.toLocaleString()} icon={Users} iconBg="bg-[#0084ff]/15" iconColor="text-[#0084ff]" change={stats.change} loading={loading} />
+        <MetricCard label="Total Messages" value={stats.total.toLocaleString()} icon={MessageSquare} iconBg="bg-purple-500/15" iconColor="text-purple-300" change={stats.change} loading={loading} />
+        <MetricCard label="AI Response Rate" value={`${stats.aiRate}%`} icon={Bot} iconBg="bg-[#00c853]/15" iconColor="text-[#00c853]" change={5} loading={loading} />
+        <MetricCard label="Avg Response Time" value={fmtResponse(stats.avgResponse)} icon={Clock} iconBg="bg-orange-500/15" iconColor="text-orange-300" change={-12} loading={loading} inverted />
       </div>
 
-      <div className="bg-white border border-slate-200/60 rounded-2xl p-6 mb-6 shadow-sm">
+      <div className="bg-[#0f1117] border border-white/10 rounded-2xl p-6 mb-6">
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Message Volume</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Last 7 days · Client vs AI messages</p>
+            <h2 className="text-base font-semibold text-white">Real Time Services · Message Volume</h2>
+            <p className="text-xs text-white/60 mt-0.5">Last 7 days · Client vs AI messages</p>
           </div>
           <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-slate-300" /> Client</span>
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#0084ff]" /> AI</span>
+            <span className="flex items-center gap-1.5 text-white/70"><span className="h-2.5 w-2.5 rounded-sm bg-white/30" /> Client</span>
+            <span className="flex items-center gap-1.5 text-white/70"><span className="h-2.5 w-2.5 rounded-sm bg-[#0084ff]" /> AI</span>
           </div>
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-              <Tooltip cursor={{ fill: "#f8fafc" }} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }} />
-              <Bar dataKey="Client" fill="#cbd5e1" radius={[6, 6, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+              <XAxis dataKey="day" stroke="rgba(255,255,255,0.5)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.5)" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} contentStyle={{ borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "#0B141A", color: "#fff", fontSize: 12 }} />
+              <Bar dataKey="Client" fill="rgba(255,255,255,0.35)" radius={[6, 6, 0, 0]} />
               <Bar dataKey="AI" fill="#0084ff" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -173,9 +173,9 @@ function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-[#0f1117] border border-white/10 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-slate-900">Most Active Contacts</h2>
+            <h2 className="text-base font-semibold text-white">Most Active Contacts</h2>
             <Link to="/contacts" className="text-xs font-medium text-[#0084ff] hover:underline flex items-center gap-1">
               View all <ArrowRight className="h-3 w-3" />
             </Link>
@@ -184,35 +184,35 @@ function DashboardPage() {
             {topContacts.map((c, i) => {
               const initial = c.phone.replace(/\D/g, "").slice(-1) || "#";
               return (
-                <Link key={c.phone} to="/inbox" search={{ phone: c.phone } as never} className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-                  <span className="text-xs font-bold text-slate-400 w-5">#{i + 1}</span>
+                <Link key={c.phone} to="/inbox" search={{ phone: c.phone } as never} className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-white/5 transition-colors">
+                  <span className="text-xs font-bold text-white/40 w-5">#{i + 1}</span>
                   <div className={`h-9 w-9 rounded-full bg-gradient-to-br ${avatarColor(c.phone)} text-white flex items-center justify-center text-sm font-semibold`}>{initial}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-900">+{c.phone}</div>
-                    <div className="text-[11px] text-slate-500">Last seen {format(new Date(c.last), "MMM d, HH:mm")}</div>
+                    <div className="text-sm font-medium text-white">+{c.phone}</div>
+                    <div className="text-[11px] text-white/60">Last seen {format(new Date(c.last), "MMM d, HH:mm")}</div>
                   </div>
-                  <span className="text-xs font-semibold bg-blue-50 text-[#0084ff] px-2.5 py-1 rounded-full">{c.count} msgs</span>
+                  <span className="text-xs font-semibold bg-[#0084ff]/15 text-[#0084ff] px-2.5 py-1 rounded-full">{c.count} msgs</span>
                 </Link>
               );
             })}
-            {topContacts.length === 0 && <div className="py-6 text-center text-slate-400 text-sm">No data yet</div>}
+            {topContacts.length === 0 && <div className="py-6 text-center text-white/40 text-sm">No data yet</div>}
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900 mb-1">Conversation Status</h2>
-          <p className="text-xs text-slate-500 mb-5">Engagement breakdown</p>
+        <div className="bg-[#0f1117] border border-white/10 rounded-2xl p-6">
+          <h2 className="text-base font-semibold text-white mb-1">Conversation Status</h2>
+          <p className="text-xs text-white/60 mb-5">Engagement breakdown</p>
           <div className="space-y-5">
             {statusBreakdown.map((s) => (
               <div key={s.label}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-700">{s.label}</span>
+                  <span className="text-sm text-white/80">{s.label}</span>
                   <span className={`text-sm font-semibold ${s.text}`}>{s.count}</span>
                 </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div className={`h-full ${s.color} rounded-full transition-all`} style={{ width: `${s.pct}%` }} />
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">{s.pct}% of total</div>
+                <div className="text-[11px] text-white/40 mt-1">{s.pct}% of total</div>
               </div>
             ))}
           </div>
@@ -228,21 +228,21 @@ function MetricCard({
   const positive = inverted ? change < 0 : change > 0;
   const TrendIcon = change >= 0 ? TrendingUp : TrendingDown;
   return (
-    <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-[#0f1117] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between mb-3">
         <div className={`h-10 w-10 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
-          positive ? "bg-green-50 text-[#00c853]" : "bg-red-50 text-red-600"
+          positive ? "bg-[#00c853]/15 text-[#00c853]" : "bg-red-500/15 text-red-300"
         }`}>
           <TrendIcon className="h-3 w-3" />
           {Math.abs(change)}%
         </div>
       </div>
-      <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{label}</div>
-      <div className="text-2xl font-bold text-slate-900 mt-1">{loading ? "—" : value}</div>
-      <div className="text-[11px] text-slate-400 mt-1">vs yesterday</div>
+      <div className="text-[11px] uppercase tracking-wider text-white/60 font-semibold">{label}</div>
+      <div className="text-2xl font-bold text-white mt-1">{loading ? "—" : value}</div>
+      <div className="text-[11px] text-white/40 mt-1">vs yesterday</div>
     </div>
   );
 }

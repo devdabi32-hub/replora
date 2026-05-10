@@ -6,7 +6,7 @@ import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 
 export const Route = createFileRoute("/contacts")({
-  head: () => ({ meta: [{ title: "Contacts — Chatora" }] }),
+  head: () => ({ meta: [{ title: "Contacts — Replora" }] }),
   component: () => (
     <AppLayout>
       <ContactsPage />

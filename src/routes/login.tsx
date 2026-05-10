@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { MessageCircle, Loader2, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — Chatora" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Replora" }] }),
   component: LoginPage,
 });
 
@@ -49,7 +49,7 @@ function LoginPage() {
               <Eye className="h-3 w-3 text-[#00c853]" />
             </span>
           </div>
-          <div className="text-xl font-semibold text-white">Chatora</div>
+          <div className="text-xl font-semibold text-white">Replora</div>
           <div className="text-sm text-white/60">Your AI talks. You watch.</div>
         </div>
         <div className="bg-white/5 rounded-2xl shadow-xl border border-white/10 p-8">
@@ -96,7 +96,7 @@ function LoginPage() {
             Continue with Google
           </button>
           <div className="text-center text-sm text-white/60 mt-6">
-            New to Chatora?{" "}
+            New to Replora?{" "}
             <Link to="/signup" className="text-[#0084ff] font-medium hover:underline">Start free trial</Link>
           </div>
         </div>

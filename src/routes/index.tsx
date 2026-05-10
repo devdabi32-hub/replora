@@ -16,13 +16,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Chatora — Your AI Talks. You Watch." },
+      { title: "Replora — Your AI Talks. You Watch." },
       {
         name: "description",
         content:
           "Monitor every WhatsApp AI conversation in real time. Built for n8n agencies in India. Catch mistakes, prove ROI, and never lose a hot lead.",
       },
-      { property: "og:title", content: "Chatora — Your AI Talks. You Watch." },
+      { property: "og:title", content: "Replora — Your AI Talks. You Watch." },
       {
         property: "og:description",
         content:
@@ -57,7 +57,7 @@ function Landing() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
             <Logo className="h-8 w-8" />
-            <span className="font-semibold tracking-tight text-[15px]">Chatora</span>
+            <span className="font-semibold tracking-tight text-[15px]">Replora</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm text-white/60">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -106,7 +106,7 @@ function Landing() {
                   <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-                  <span className="ml-3 text-[11px] text-white/40 font-mono">app.chatora.io/inbox</span>
+                  <span className="ml-3 text-[11px] text-white/40 font-mono">app.replora.com/inbox</span>
                 </div>
                 <div className="grid grid-cols-12 h-[460px]">
                   <div className="col-span-4 bg-[#111B21] border-r border-white/[0.04] overflow-hidden">
@@ -291,7 +291,7 @@ function Landing() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
-                { quote: "Chatora helped me catch a broken AI flow before my client noticed. Saved me a ₹50,000 contract.", name: "Rohan M.", role: "Founder, Automateup", color: "from-blue-500 to-indigo-600" },
+                { quote: "Replora helped me catch a broken AI flow before my client noticed. Saved me a ₹50,000 contract.", name: "Rohan M.", role: "Founder, Automateup", color: "from-blue-500 to-indigo-600" },
                 { quote: "Finally I can show clients exactly how their AI agent is performing. Dashboards are beautiful.", name: "Priya S.", role: "CEO, GrowthBots.in", color: "from-emerald-500 to-teal-600" },
                 { quote: "Setup took under 2 minutes. The inbox is exactly like WhatsApp Web. My team loves it.", name: "Arjun K.", role: "Lead, FlowAgency", color: "from-purple-500 to-pink-600" },
               ].map((t) => (
@@ -318,7 +318,7 @@ function Landing() {
             <div className="relative">
               <Bot className="h-12 w-12 mx-auto text-white mb-5" />
               <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-white">Ready to see what your AI is saying?</h2>
-              <p className="mt-4 text-white/85 text-lg max-w-xl mx-auto">Join 50+ n8n agencies already monitoring their AI agents with Chatora.</p>
+              <p className="mt-4 text-white/85 text-lg max-w-xl mx-auto">Join 50+ n8n agencies already monitoring their AI agents with Replora.</p>
               <Link to="/signup" className="mt-8 inline-flex items-center gap-2 h-12 px-7 rounded-lg bg-black hover:bg-white hover:text-black text-white text-sm font-semibold shadow-xl transition-all">
                 Start Your Free Trial <ArrowRight className="h-4 w-4" />
               </Link>
@@ -332,7 +332,7 @@ function Landing() {
             <div>
               <Link to="/" className="flex items-center gap-2.5">
                 <Logo className="h-8 w-8" />
-                <span className="font-semibold tracking-tight">Chatora</span>
+                <span className="font-semibold tracking-tight">Replora</span>
               </Link>
               <p className="mt-3 text-sm text-white/50">Your AI talks. You watch.</p>
             </div>
@@ -345,7 +345,7 @@ function Landing() {
             </div>
           </div>
           <div className="max-w-6xl mx-auto mt-10 pt-6 border-t border-white/[0.04] text-xs text-white/40">
-            © Chatora 2026 · Made in India 🇮🇳
+            © Replora 2026 · Made in India 🇮🇳
           </div>
         </footer>
       </main>
