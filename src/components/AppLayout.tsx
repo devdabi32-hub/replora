@@ -21,7 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       if (!data.session) {
         navigate({ to: "/login" });
       } else {
-        setUserEmail(data.session.user.email ?? "admin@chatora.io");
+        setUserEmail(data.session.user.email ?? "admin@replora.com");
         setAuthChecked(true);
       }
     });
@@ -71,7 +71,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </span>
           </div>
           <div>
-            <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">Chatora</div>
+            <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">Replora</div>
             <div className="text-[11px] text-white/60 mt-0.5">Your AI talks. You watch.</div>
           </div>
         </div>

@@ -16,13 +16,13 @@ import {
 export const Route = createFileRoute("/api-docs")({
   head: () => ({
     meta: [
-      { title: "API Documentation — Chatora" },
+      { title: "API Documentation — Replora" },
       {
         name: "description",
         content:
-          "Connect n8n, Make.com, Zapier or custom code to Chatora with our simple webhook API.",
+          "Connect n8n, Make.com, Zapier or custom code to Replora with our simple webhook API.",
       },
-      { property: "og:title", content: "Chatora API Documentation" },
+      { property: "og:title", content: "Replora API Documentation" },
       {
         property: "og:description",
         content: "Webhook-based API for monitoring WhatsApp AI conversations.",
@@ -200,7 +200,7 @@ function DocsView() {
             <Postman />
             <Faq />
             <div className="border-t border-white/10 pt-8 text-center text-xs text-white/50">
-              Need help? Email support@chatora.io
+              Need help? Email support@replora.com
             </div>
           </div>
         </div>
@@ -388,11 +388,11 @@ function Introduction() {
     <Section
       id="introduction"
       eyebrow="Documentation"
-      title="Chatora API Documentation"
+      title="Replora API Documentation"
       subtitle="Connect any automation tool to monitor your WhatsApp AI agent conversations."
     >
       <p>
-        Chatora provides a simple webhook-based API that lets you push WhatsApp
+        Replora provides a simple webhook-based API that lets you push WhatsApp
         conversation data from any automation platform — n8n, Make.com, Zapier or
         custom code — directly into your monitoring portal.
       </p>
@@ -436,7 +436,7 @@ function Authentication() {
       id="authentication"
       eyebrow="Security"
       title="Authentication"
-      subtitle="Chatora uses a single API key to authenticate all requests. Include your Secret API Key in every request."
+      subtitle="Replora uses a single API key to authenticate all requests. Include your Secret API Key in every request."
     >
       <CodeBlock
         language="bash"
@@ -959,8 +959,8 @@ function N8nNode() {
       subtitle="A native n8n community node — coming soon."
     >
       <Callout variant="info">
-        We're building a one-click Chatora node for n8n. Want early access?
-        Email <strong>support@chatora.io</strong>.
+        We're building a one-click Replora node for n8n. Want early access?
+        Email <strong>support@replora.com</strong>.
       </Callout>
     </Section>
   );
@@ -988,7 +988,7 @@ function Faq() {
   const items = [
     {
       q: "Can I send images or files?",
-      a: "Currently Chatora supports text messages only. Image support is coming soon.",
+      a: "Currently Replora supports text messages only. Image support is coming soon.",
     },
     {
       q: "How many messages can I send per second?",
@@ -996,7 +996,7 @@ function Faq() {
     },
     {
       q: "What happens if my webhook request fails?",
-      a: "Chatora returns appropriate HTTP status codes. Implement retry logic in your n8n workflow.",
+      a: "Replora returns appropriate HTTP status codes. Implement retry logic in your n8n workflow.",
     },
     {
       q: "Is the webhook URL permanent?",

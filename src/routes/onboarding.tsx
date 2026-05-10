@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Welcome — Chatora" }] }),
+  head: () => ({ meta: [{ title: "Welcome — Replora" }] }),
   component: OnboardingPage,
 });
 
@@ -132,7 +132,7 @@ function OnboardingPage() {
             <div className="h-8 w-8 rounded-lg bg-[#0084ff] flex items-center justify-center">
               <Eye className="h-4 w-4 text-white" />
             </div>
-            <span className="font-semibold text-white">Chatora</span>
+            <span className="font-semibold text-white">Replora</span>
           </div>
           <button
             onClick={skip}
@@ -255,7 +255,7 @@ function OnboardingPage() {
           {step === 2 && (
             <>
               <h1 className="text-2xl font-semibold text-white mb-1">
-                How will you use Chatora?
+                How will you use Replora?
               </h1>
               <p className="text-sm text-white/60 mb-6">Select all that apply</p>
 

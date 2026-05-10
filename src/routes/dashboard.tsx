@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { MessageSquare, Users, Bot, Clock, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Chatora" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Replora" }] }),
   component: () => (
     <AppLayout>
       <DashboardPage />
