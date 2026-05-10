@@ -1,11 +1,10 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import {
-  Copy, Check, RefreshCw, Pencil, Trash2, KeyRound,
-  User, CreditCard, AlertTriangle, Sparkles, ArrowRight, Info,
+  User, CreditCard, AlertTriangle, Sparkles, LifeBuoy, Trash2, Check,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
@@ -13,314 +12,218 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
-function genSecret() {
-  const arr = new Uint8Array(24);
-  crypto.getRandomValues(arr);
-  return "wam_sk_" + Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+const INDUSTRIES = ["Technology","Marketing","Real Estate","Education","Healthcare","Finance","E-commerce","Logistics","Hospitality","Other"];
+const TEAM_SIZES = ["1-5","6-10","11-50","51-200","200+"];
+
+const SUPPORT_MAILTO =
+  "mailto:care@replora.com?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
 
 function SettingsPage() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [agency, setAgency] = useState("");
-  const [agencyDraft, setAgencyDraft] = useState("");
-  const [editingAgency, setEditingAgency] = useState(false);
-  const [savingAgency, setSavingAgency] = useState(false);
-  const [secret, setSecret] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [agencyName, setAgencyName] = useState("");
+  const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [industry, setIndustry] = useState("Technology");
+  const [teamSize, setTeamSize] = useState("1-5");
+  const [saving, setSaving] = useState(false);
+
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (!data.user) { navigate({ to: "/login" }); return; }
-      setUserId(data.user.id);
       setEmail(data.user.email ?? "");
+      const meta = data.user.user_metadata as Record<string, unknown> | null;
+      setAgencyName((meta?.agency_name as string) ?? "");
+      setDescription((meta?.business_description as string) ?? "");
+      setWebsite((meta?.website as string) ?? "");
+      setIndustry((meta?.industry as string) ?? "Technology");
+      setTeamSize((meta?.team_size as string) ?? "1-5");
 
-      // Try to load agency from agencies table
-      let agencyRow: any = null;
-      const { data: userRow } = await supabase
-        .from("users")
-        .select("agency_id")
-        .eq("id", data.user.id)
-        .maybeSingle();
-
+      const { data: userRow } = await supabase.from("users").select("agency_id").eq("id", data.user.id).maybeSingle();
       if (userRow?.agency_id) {
-        const { data: row } = await supabase
-          .from("agencies")
-          .select("id, name, webhook_secret")
-          .eq("id", userRow.agency_id)
-          .maybeSingle();
-        agencyRow = row;
-      }
-
-      if (agencyRow) {
-        setAgencyId(agencyRow.id);
-        setAgency(agencyRow.name ?? "");
-        setAgencyDraft(agencyRow.name ?? "");
-        setSecret(agencyRow.webhook_secret ?? "");
-      } else {
-        // Fallback if backend tables not yet provisioned
-        const fallbackName = (data.user.user_metadata as any)?.agency_name ?? "My Agency";
-        setAgency(fallbackName);
-        setAgencyDraft(fallbackName);
-        const stored = localStorage.getItem("wa_webhook_secret") ?? (() => {
-          const s = genSecret(); localStorage.setItem("wa_webhook_secret", s); return s;
-        })();
-        setSecret(stored);
+        setAgencyId(userRow.agency_id);
+        const { data: row } = await supabase.from("agencies")
+          .select("name, business_description, website, industry, team_size")
+          .eq("id", userRow.agency_id).maybeSingle();
+        if (row) {
+          setAgencyName(row.name ?? "");
+          if (row.business_description) setDescription(row.business_description as string);
+          if (row.website) setWebsite(row.website as string);
+          if (row.industry) setIndustry(row.industry as string);
+          if (row.team_size) setTeamSize(row.team_size as string);
+        }
       }
     })();
   }, [navigate]);
 
-  const copy = async () => {
-    await navigator.clipboard.writeText(secret);
-    setCopied(true);
-    toast.success("API key copied to clipboard");
-    setTimeout(() => setCopied(false), 1800);
-  };
-
-  const regenerate = async () => {
-    setRegenerating(true);
-    const next = genSecret();
+  const save = async () => {
+    if (!agencyName.trim()) { toast.error("Agency name is required"); return; }
+    setSaving(true);
+    const meta = { agency_name: agencyName, business_description: description, website, industry, team_size: teamSize };
+    await supabase.auth.updateUser({ data: meta });
     if (agencyId) {
-      const { error } = await supabase
-        .from("agencies")
-        .update({ webhook_secret: next })
-        .eq("id", agencyId);
-      if (error) {
-        toast.error("Could not regenerate key");
-        setRegenerating(false);
-        return;
-      }
-    } else {
-      localStorage.setItem("wa_webhook_secret", next);
+      await supabase.from("agencies").update({
+        name: agencyName, business_description: description, website, industry, team_size: teamSize,
+      }).eq("id", agencyId);
     }
-    setSecret(next);
-    setRegenerating(false);
-    toast.success("New API key generated");
-  };
-
-  const saveAgency = async () => {
-    const name = agencyDraft.trim();
-    if (!name) { toast.error("Agency name cannot be empty"); return; }
-    setSavingAgency(true);
-    if (agencyId) {
-      const { error } = await supabase.from("agencies").update({ name }).eq("id", agencyId);
-      if (error) { toast.error("Could not save"); setSavingAgency(false); return; }
-    } else {
-      await supabase.auth.updateUser({ data: { agency_name: name } });
-    }
-    setAgency(name);
-    setEditingAgency(false);
-    setSavingAgency(false);
-    toast.success("Profile updated!");
+    setSaving(false);
+    toast.success("Profile updated");
   };
 
   const deleteAccount = async () => {
+    if (deleteText !== "DELETE") return;
+    setDeleting(true);
     await supabase.auth.signOut();
+    toast.success("Account scheduled for deletion");
     navigate({ to: "/login" });
   };
 
+  const inputClass = "w-full h-11 px-3 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm";
+
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10">
-        <div className="mb-10">
+      <div className="max-w-3xl mx-auto px-6 lg:px-10 py-10">
+        <div className="mb-8">
           <h1 className="text-3xl font-semibold text-white tracking-tight">Settings</h1>
-          <p className="text-sm text-white/60 mt-1.5">Manage your workspace, integrations and billing.</p>
+          <p className="text-sm text-white/60 mt-1.5">Manage your agency, billing and account.</p>
         </div>
 
-        {/* API Keys */}
-        <section className="bg-white/5 rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
+        {/* A: Agency Profile */}
+        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-7 mb-6">
           <div className="flex items-start gap-3 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center">
-              <KeyRound className="h-5 w-5" />
+            <div className="h-10 w-10 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center"><User className="h-5 w-5" /></div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Agency Profile</h2>
+              <p className="text-sm text-white/60 mt-0.5">Information about your business.</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-white/80">Agency Name</label>
+              <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className={`mt-1 ${inputClass}`} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white tracking-tight">API Keys</h2>
-              <p className="text-sm text-white/60 mt-0.5">
-                Use these keys to connect your automation tools to Replora.
-              </p>
+              <label className="text-xs font-medium text-white/80">Email</label>
+              <input value={email} readOnly className={`mt-1 ${inputClass} opacity-60 cursor-not-allowed`} />
             </div>
-          </div>
-
-          <label className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">
-            Secret API key
-          </label>
-          <div className="mt-2 flex flex-col sm:flex-row items-stretch gap-2">
-            <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 font-mono text-xs text-white/90 break-all flex items-center">
-              {secret || "Loading…"}
+            <div>
+              <label className="text-xs font-medium text-white/80">Business Description</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
+                className="mt-1 w-full px-3 py-2.5 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm resize-none" />
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={copy}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/5 text-white/80 text-xs font-semibold transition-colors"
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy"}
-              </button>
-              <button
-                onClick={regenerate}
-                disabled={regenerating}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white/10 hover:bg-white/10 text-white text-xs font-semibold transition-colors disabled:opacity-60"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${regenerating ? "animate-spin" : ""}`} />
-                Regenerate
-              </button>
+            <div>
+              <label className="text-xs font-medium text-white/80">Website <span className="text-white/40">(optional)</span></label>
+              <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourwebsite.com" className={`mt-1 ${inputClass}`} />
             </div>
-          </div>
-
-          <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-[#0084ff]/15 border border-blue-500/20 px-4 py-3">
-            <Info className="h-4 w-4 text-[#0084ff] mt-0.5 shrink-0" />
-            <p className="text-[13px] text-white/80 leading-relaxed">
-              This is your unique API key. Add it to your n8n workflow as the{" "}
-              <code className="font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[11px] text-white/90">
-                x-wa-secret
-              </code>{" "}
-              header. Never share this key publicly.
-            </p>
-          </div>
-
-          <Link
-            to="/api-docs"
-            className="mt-5 inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors"
-          >
-            View Integration Guide <ArrowRight className="h-4 w-4" />
-          </Link>
-        </section>
-
-        {/* Agency Profile */}
-        <section className="bg-white/5 rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
-          <div className="flex items-start gap-3 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-purple-500/15 text-purple-600 flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-white tracking-tight">Agency profile</h2>
-              <p className="text-sm text-white/60 mt-0.5">Your workspace identity.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="text-[11px] text-white/60 uppercase tracking-wider font-semibold">
-                  Agency name
-                </div>
-                {!editingAgency && (
-                  <button
-                    onClick={() => { setAgencyDraft(agency); setEditingAgency(true); }}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-white/70 hover:text-white"
-                  >
-                    <Pencil className="h-3 w-3" /> Edit
-                  </button>
-                )}
-              </div>
-              {editingAgency ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <input
-                    autoFocus
-                    value={agencyDraft}
-                    onChange={(e) => setAgencyDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveAgency();
-                      if (e.key === "Escape") { setEditingAgency(false); setAgencyDraft(agency); }
-                    }}
-                    className="flex-1 h-9 px-3 rounded-md border border-white/15 bg-white/5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0084ff]/30 focus:border-[#0084ff]"
-                  />
-                  <button
-                    onClick={saveAgency}
-                    disabled={savingAgency}
-                    className="px-3 h-9 rounded-md bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-semibold disabled:opacity-60"
-                  >
-                    {savingAgency ? "Saving…" : "Save"}
-                  </button>
-                  <button
-                    onClick={() => { setEditingAgency(false); setAgencyDraft(agency); }}
-                    className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5 text-white/80 text-xs font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="text-sm font-medium text-white">{agency || "—"}</div>
-              )}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="text-[11px] text-white/60 uppercase tracking-wider font-semibold">Email</div>
-              <div className="text-sm font-medium text-white mt-1.5">{email}</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Plan */}
-        <section className="bg-white/5 rounded-2xl border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7 mb-6">
-          <div className="flex items-start gap-3 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-[#00c853]/15 text-[#00c853] flex items-center justify-center">
-              <CreditCard className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-white tracking-tight">Plan & billing</h2>
-              <p className="text-sm text-white/60 mt-0.5">Manage your subscription.</p>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 text-white">
-            <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-blue-300">Current plan</span>
-                  <span className="text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Trial</span>
-                </div>
-                <div className="text-2xl font-semibold mt-1">Free Trial</div>
-                <div className="text-xs text-white/50 mt-1">14 days remaining</div>
+                <label className="text-xs font-medium text-white/80">Industry</label>
+                <select value={industry} onChange={(e) => setIndustry(e.target.value)} className={`mt-1 ${inputClass}`}>
+                  {INDUSTRIES.map((i) => <option key={i} value={i} className="bg-[#0f1117]">{i}</option>)}
+                </select>
               </div>
-              <button disabled className="flex items-center gap-1.5 px-4 h-10 rounded-lg bg-[#0084ff]/40 text-white/70 text-sm font-medium cursor-not-allowed">
-                <Sparkles className="h-4 w-4" /> Upgrade plan
-              </button>
+              <div>
+                <label className="text-xs font-medium text-white/80">Team Size</label>
+                <select value={teamSize} onChange={(e) => setTeamSize(e.target.value)} className={`mt-1 ${inputClass}`}>
+                  {TEAM_SIZES.map((i) => <option key={i} value={i} className="bg-[#0f1117]">{i}</option>)}
+                </select>
+              </div>
+            </div>
+            <button onClick={save} disabled={saving}
+              className="h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-60">
+              {saving ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        </section>
+
+        {/* B: Billing & Plans */}
+        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-7 mb-6">
+          <div className="flex items-start gap-3 mb-6">
+            <div className="h-10 w-10 rounded-lg bg-[#00c853]/15 text-[#00c853] flex items-center justify-center"><CreditCard className="h-5 w-5" /></div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Billing & Plans</h2>
+              <p className="text-sm text-white/60 mt-0.5">Your subscription details.</p>
             </div>
           </div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#0084ff]/15 text-[#0084ff] border border-[#0084ff]/30">Starter</span>
+            <span className="text-[11px] text-white/60">Current Plan</span>
+          </div>
+          <div className="text-3xl font-semibold text-white">₹1499<span className="text-base font-normal text-white/60">/month</span></div>
           <ul className="mt-5 space-y-2 text-sm text-white/80">
-            {["Unlimited WhatsApp conversations","Real-time AI message monitoring","Up to 5 team members","Webhook integrations (n8n, Zapier)","Priority email support"].map((f) => (
-              <li key={f} className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-[#00c853]" /> {f}
-              </li>
+            {["1 WhatsApp number","Unlimited messages","Full portal access","AI monitoring dashboard","Email support"].map((f) => (
+              <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#00c853]" /> {f}</li>
             ))}
           </ul>
+          <button onClick={() => navigate({ to: "/api-configuration" })}
+            className="mt-6 inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors">
+            <Sparkles className="h-4 w-4" /> Upgrade Plan
+          </button>
         </section>
 
-        {/* Danger */}
-        <section className="bg-white/5 rounded-2xl border border-red-500/30 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-7">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
+        {/* C: Support */}
+        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-7 mb-6">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="h-10 w-10 rounded-lg bg-purple-500/15 text-purple-300 flex items-center justify-center"><LifeBuoy className="h-5 w-5" /></div>
             <div>
-              <h2 className="text-lg font-semibold text-white tracking-tight">Danger zone</h2>
+              <h2 className="text-lg font-semibold text-white">Support</h2>
+              <p className="text-sm text-white/60 mt-0.5">Need help? We're here for you.</p>
+            </div>
+          </div>
+          <a href={SUPPORT_MAILTO}
+            className="inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors">
+            Contact Support
+          </a>
+          <p className="mt-3 text-xs text-white/50">Reach us at care@replora.com</p>
+        </section>
+
+        {/* D: Danger Zone */}
+        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-red-500/40 p-7">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="h-10 w-10 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center"><AlertTriangle className="h-5 w-5" /></div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Danger Zone</h2>
               <p className="text-sm text-white/60 mt-0.5">Irreversible actions.</p>
             </div>
           </div>
-          <div className="flex items-center justify-between flex-wrap gap-3 bg-red-500/100/10 border border-red-500/30 rounded-xl p-4">
-            <div>
-              <div className="text-sm font-semibold text-white">Delete account</div>
-              <div className="text-xs text-white/70 mt-0.5">Permanently delete your workspace and all message data.</div>
-            </div>
-            {confirmDelete ? (
-              <div className="flex items-center gap-2">
-                <button onClick={() => setConfirmDelete(false)} className="px-3 h-9 rounded-md bg-white/5 border border-white/10 hover:bg-white/5 text-white/80 text-xs font-medium">Cancel</button>
-                <button onClick={deleteAccount} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">
-                  <Trash2 className="h-3.5 w-3.5" /> Confirm delete
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setConfirmDelete(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-colors">
-                <Trash2 className="h-3.5 w-3.5" /> Delete account
-              </button>
-            )}
-          </div>
+          <button onClick={() => setShowDelete(true)}
+            className="inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors">
+            <Trash2 className="h-4 w-4" /> Delete Account
+          </button>
         </section>
       </div>
+
+      {/* Delete Modal */}
+      {showDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md bg-[#0f1117] border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center shrink-0"><AlertTriangle className="h-5 w-5" /></div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Delete Account?</h3>
+                <p className="text-sm text-white/70 mt-1">This action is permanent and cannot be undone. All your conversations, contacts, and data will be deleted forever.</p>
+              </div>
+            </div>
+            <label className="text-xs font-medium text-white/80">Type DELETE to confirm</label>
+            <input value={deleteText} onChange={(e) => setDeleteText(e.target.value)} autoFocus
+              className={`mt-1 ${inputClass}`} placeholder="DELETE" />
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button onClick={() => { setShowDelete(false); setDeleteText(""); }}
+                className="h-10 px-4 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-sm font-medium">Cancel</button>
+              <button onClick={deleteAccount} disabled={deleteText !== "DELETE" || deleting}
+                className="h-10 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+                {deleting ? "Deleting…" : "Delete Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
