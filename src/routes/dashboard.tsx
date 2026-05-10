@@ -134,7 +134,6 @@ function DashboardPage() {
   };
 
   return (
-    <AppLayout>
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-white">Dashboard</h1>
@@ -220,7 +219,6 @@ function DashboardPage() {
         </div>
       </div>
     </div>
-    </AppLayout>
   );
 }
 
