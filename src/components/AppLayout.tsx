@@ -1,26 +1,36 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Inbox, LayoutDashboard, Users, MessageCircle, Settings, LogOut, Code2, Eye } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  LayoutDashboard, Inbox, Users, BookOpen, KeyRound,
+  Headphones, MessageCircle, Eye, LogOut, Trash2, User as UserIcon,
+  Settings as SettingsIcon, UserPlus, FileDown,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
+const SUPPORT_MAILTO =
+  "mailto:care@replora.com?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
+
 const nav = [
-  { to: "/inbox", label: "Inbox", icon: Inbox, key: "inbox" },
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, key: "dashboard" },
-  { to: "/contacts", label: "Contacts", icon: Users, key: "contacts" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" as const },
+  { to: "/contacts", label: "Contacts", icon: Users },
+  { to: "/api-docs", label: "API Docs", icon: BookOpen },
+  { to: "/api-configuration", label: "API Configuration", icon: KeyRound },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const [inboxCount, setInboxCount] = useState<number>(0);
+  const [inboxCount, setInboxCount] = useState(0);
   const [authChecked, setAuthChecked] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>("");
+  const [userEmail, setUserEmail] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        navigate({ to: "/login" });
-      } else {
+      if (!data.session) navigate({ to: "/login" });
+      else {
         setUserEmail(data.session.user.email ?? "admin@replora.com");
         setAuthChecked(true);
       }
@@ -29,13 +39,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       if (!session) navigate({ to: "/login" });
       else setUserEmail(session.user.email ?? "");
     });
-    return () => { sub.subscription.unsubscribe(); };
+    return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/login" });
-  };
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
 
   useEffect(() => {
     const load = async () => {
@@ -53,13 +68,28 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
+
+  const inviteTeam = () => {
+    window.location.href = "mailto:?subject=Join%20me%20on%20Replora&body=Hey%2C%20I%27m%20using%20Replora%20to%20monitor%20my%20WhatsApp%20AI%20agent.%20Join%20me%20at%20https%3A%2F%2Freplora.com";
+  };
+
+  const downloadPdf = () => {
+    window.print();
+  };
+
   if (!authChecked) {
     return <div className="min-h-screen flex items-center justify-center bg-black text-white/60 text-sm">Loading…</div>;
   }
 
+  const initial = (userEmail[0] || "A").toUpperCase();
+
   return (
     <div className="flex min-h-screen w-full bg-black text-white">
-      <aside className="hidden md:flex w-64 flex-col bg-[#0f1117] text-slate-200 fixed inset-y-0 left-0 z-20">
+      <aside className="hidden md:flex w-64 flex-col bg-[#0f1117] text-slate-200 fixed inset-y-0 left-0 z-20 border-r border-white/[0.06]">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.06]">
           <div className="relative">
@@ -76,9 +106,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/60">Main</div>
+        {/* Top nav */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {nav.map((n) => {
             const Icon = n.icon;
             const active = pathname.startsWith(n.to);
@@ -86,79 +115,89 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={n.to}
                 to={n.to}
-                className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                className={`group flex items-center gap-3 rounded-lg pl-3 pr-3 py-2.5 text-sm font-medium transition-all relative ${
                   active
-                    ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
-                    : "text-white/50 hover:bg-white/[0.04] hover:text-white"
+                    ? "bg-white/[0.06] text-white"
+                    : "text-white/60 hover:bg-white/[0.04] hover:text-white"
                 }`}
               >
+                {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[#0084ff]" />}
                 <Icon className="h-[18px] w-[18px]" />
                 <span className="flex-1">{n.label}</span>
-                {n.key === "inbox" && inboxCount > 0 && (
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
-                    active ? "bg-white/20 text-white" : "bg-[#0084ff] text-white"
-                  }`}>
+                {n.badgeKey === "inbox" && inboxCount > 0 && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center bg-[#0084ff] text-white">
                     {inboxCount > 99 ? "99+" : inboxCount}
                   </span>
                 )}
               </Link>
             );
           })}
-
-          <div className="px-3 pt-6 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/60">System</div>
-          <Link
-            to="/settings"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-              pathname.startsWith("/settings")
-                ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
-                : "text-white/50 hover:bg-white/[0.04] hover:text-white"
-            }`}
-          >
-            <Settings className="h-[18px] w-[18px]" />
-            Settings
-          </Link>
-          <Link
-            to="/api-docs"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-              pathname.startsWith("/api-docs")
-                ? "bg-[#0084ff] text-white shadow-md shadow-blue-500/20"
-                : "text-white/50 hover:bg-white/[0.04] hover:text-white"
-            }`}
-          >
-            <Code2 className="h-[18px] w-[18px]" />
-            API Docs
-          </Link>
         </nav>
 
-        {/* Profile */}
-        <div className="p-3 border-t border-white/[0.06]">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-            <div className="relative">
-              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-semibold">
-                A
+        {/* Bottom: Support + Admin */}
+        <div className="p-3 border-t border-white/[0.06] space-y-1">
+          <a
+            href={SUPPORT_MAILTO}
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/60 hover:bg-white/[0.04] hover:text-white transition-colors"
+          >
+            <Headphones className="h-[18px] w-[18px]" />
+            Support
+          </a>
+
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.04] transition-colors"
+            >
+              <div className="relative">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-semibold">
+                  {initial}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#00c853] border-2 border-[#0f1117]" />
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#00c853] border-2 border-[#0f1117]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-white truncate">Admin</div>
-              <div className="text-[11px] text-white/60 truncate">{userEmail}</div>
-            </div>
-            <button onClick={signOut} title="Sign out" className="p-1.5 rounded-md hover:bg-white/10 text-white/50 hover:text-white transition-colors">
-              <LogOut className="h-4 w-4" />
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-sm font-medium text-white truncate">Admin</div>
+                <div className="text-[11px] text-white/60 truncate">{userEmail}</div>
+              </div>
             </button>
+
+            {menuOpen && (
+              <div className="absolute bottom-full mb-2 left-0 right-0 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl py-1.5 text-sm overflow-hidden">
+                <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
+                  <UserIcon className="h-4 w-4" /> View Profile
+                </Link>
+                <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
+                  <SettingsIcon className="h-4 w-4" /> Settings
+                </Link>
+                <div className="my-1 border-t border-white/10" />
+                <button onClick={() => { setMenuOpen(false); inviteTeam(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
+                  <UserPlus className="h-4 w-4" /> Invite Team Member
+                </button>
+                <button onClick={() => { setMenuOpen(false); downloadPdf(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
+                  <FileDown className="h-4 w-4" /> Download PDF Report
+                </button>
+                <div className="my-1 border-t border-white/10" />
+                <button onClick={() => { setMenuOpen(false); signOut(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
+                  <LogOut className="h-4 w-4" /> Log Out
+                </button>
+                <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-red-400 hover:bg-red-500/10">
+                  <Trash2 className="h-4 w-4" /> Delete Account
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0f1117] text-slate-300 flex justify-around py-2 border-t border-white/10">
-        {nav.map((n) => {
+        {nav.slice(0, 5).map((n) => {
           const Icon = n.icon;
           const active = pathname.startsWith(n.to);
           return (
-            <Link key={n.to} to={n.to} className={`flex flex-col items-center text-[11px] px-3 py-1 ${active ? "text-[#0084ff]" : ""}`}>
+            <Link key={n.to} to={n.to} className={`flex flex-col items-center text-[10px] px-2 py-1 ${active ? "text-[#0084ff]" : "text-white/60"}`}>
               <Icon className="h-5 w-5" />
-              {n.label}
+              {n.label.split(" ")[0]}
             </Link>
           );
         })}
