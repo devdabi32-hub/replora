@@ -8,7 +8,7 @@ import {
 import { supabase } from "@/lib/supabase";
 
 const SUPPORT_MAILTO =
-  "mailto:care@replora.com?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
+  "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -31,7 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) navigate({ to: "/login" });
       else {
-        setUserEmail(data.session.user.email ?? "admin@replora.com");
+        setUserEmail(data.session.user.email ?? "admin@replora.in");
         setAuthChecked(true);
       }
     });
@@ -74,7 +74,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const inviteTeam = () => {
-    window.location.href = "mailto:?subject=Join%20me%20on%20Replora&body=Hey%2C%20I%27m%20using%20Replora%20to%20monitor%20my%20WhatsApp%20AI%20agent.%20Join%20me%20at%20https%3A%2F%2Freplora.com";
+    window.location.href = "mailto:?subject=Join%20me%20on%20Replora&body=Hey%2C%20I%27m%20using%20Replora%20to%20monitor%20my%20WhatsApp%20AI%20agent.%20Join%20me%20at%20https%3A%2F%2Freplora.in";
   };
 
   const downloadPdf = () => {

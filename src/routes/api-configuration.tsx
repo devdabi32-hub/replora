@@ -249,7 +249,7 @@ function ApiConfigPage() {
             name="Agency" price="₹9999"
             features={["Unlimited numbers","Everything in Growth","White label branding","Dedicated account manager","Custom integrations","SLA guarantee"]}
             cta="Contact Sales" ctaColor="bg-[#00c853] hover:bg-[#00b048]"
-            ctaHref="mailto:care@replora.com?subject=Replora%20Agency%20Plan%20Inquiry"
+            ctaHref="mailto:care@replora.in?subject=Replora%20Agency%20Plan%20Inquiry"
           />
         </div>
         <p className="mt-6 text-center text-xs text-white/60">

@@ -106,7 +106,7 @@ function Landing() {
                   <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-                  <span className="ml-3 text-[11px] text-white/40 font-mono">app.replora.com/inbox</span>
+                  <span className="ml-3 text-[11px] text-white/40 font-mono">app.replora.in/inbox</span>
                 </div>
                 <div className="grid grid-cols-12 h-[460px]">
                   <div className="col-span-4 bg-[#111B21] border-r border-white/[0.04] overflow-hidden">

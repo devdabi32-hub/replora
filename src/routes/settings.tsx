@@ -16,7 +16,7 @@ const INDUSTRIES = ["Technology","Marketing","Real Estate","Education","Healthca
 const TEAM_SIZES = ["1-5","6-10","11-50","51-200","200+"];
 
 const SUPPORT_MAILTO =
-  "mailto:care@replora.com?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
+  "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
 
 function SettingsPage() {
   const navigate = useNavigate();
@@ -180,7 +180,7 @@ function SettingsPage() {
             className="inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors">
             Contact Support
           </a>
-          <p className="mt-3 text-xs text-white/50">Reach us at care@replora.com</p>
+          <p className="mt-3 text-xs text-white/50">Reach us at care@replora.in</p>
         </section>
 
         {/* D: Danger Zone */}

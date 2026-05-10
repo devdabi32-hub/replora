@@ -200,7 +200,7 @@ function DocsView() {
             <Postman />
             <Faq />
             <div className="border-t border-white/10 pt-8 text-center text-xs text-white/50">
-              Need help? Email support@replora.com
+              Need help? Email support@replora.in
             </div>
           </div>
         </div>
@@ -960,7 +960,7 @@ function N8nNode() {
     >
       <Callout variant="info">
         We're building a one-click Replora node for n8n. Want early access?
-        Email <strong>support@replora.com</strong>.
+        Email <strong>support@replora.in</strong>.
       </Callout>
     </Section>
   );
