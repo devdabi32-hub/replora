@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
-  Eye,
   ArrowRight,
   ArrowLeft,
   Loader2,
@@ -13,6 +12,7 @@ import {
   Phone,
   UserCog,
 } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Welcome — Replora" }] }),
@@ -116,10 +116,8 @@ function OnboardingPage() {
       <div className="max-w-[560px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-[#0084ff] flex items-center justify-center">
-              <Eye className="h-4 w-4 text-white" />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <LogoMark className="h-8 w-8" />
             <span className="font-semibold text-white">Replora</span>
           </div>
           <button

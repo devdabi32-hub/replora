@@ -6,6 +6,7 @@ import {
   Settings as SettingsIcon, UserPlus, FileDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { LogoMark } from "@/components/Logo";
 
 const SUPPORT_MAILTO =
   "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
@@ -92,14 +93,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:flex w-64 flex-col bg-[#0f1117] text-slate-200 fixed inset-y-0 left-0 z-20 border-r border-white/[0.06]">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.06]">
-          <div className="relative">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <MessageCircle className="h-5 w-5 text-white" />
-            </div>
-            <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#0f1117] border border-white/10 flex items-center justify-center">
-              <Eye className="h-2.5 w-2.5 text-[#00c853]" />
-            </span>
-          </div>
+          <LogoMark className="h-10 w-10" />
           <div>
             <div className="text-[15px] font-semibold text-white leading-tight tracking-tight">Replora</div>
             <div className="text-[11px] text-white/60 mt-0.5">Your AI talks. You watch.</div>
