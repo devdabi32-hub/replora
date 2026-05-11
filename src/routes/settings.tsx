@@ -84,7 +84,7 @@ function SettingsPage() {
     navigate({ to: "/login" });
   };
 
-  const inputClass = "w-full h-11 px-3 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm";
+  const inputClass = "w-full h-11 px-3 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm";
 
   return (
     <AppLayout>
@@ -95,7 +95,7 @@ function SettingsPage() {
         </div>
 
         {/* A: Agency Profile */}
-        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-7 mb-6">
+        <section className="bg-[#0f1117] rounded-2xl border border-white/10 p-7 mb-6">
           <div className="flex items-start gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center"><User className="h-5 w-5" /></div>
             <div>
@@ -115,7 +115,7 @@ function SettingsPage() {
             <div>
               <label className="text-xs font-medium text-white/80">Business Description</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-                className="mt-1 w-full px-3 py-2.5 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm resize-none" />
+                className="mt-1 w-full px-3 py-2.5 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm resize-none" />
             </div>
             <div>
               <label className="text-xs font-medium text-white/80">Website <span className="text-white/40">(optional)</span></label>
@@ -143,7 +143,7 @@ function SettingsPage() {
         </section>
 
         {/* B: Billing & Plans */}
-        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-7 mb-6">
+        <section className="bg-[#0f1117] rounded-2xl border border-white/10 p-7 mb-6">
           <div className="flex items-start gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-[#00c853]/15 text-[#00c853] flex items-center justify-center"><CreditCard className="h-5 w-5" /></div>
             <div>
@@ -168,7 +168,7 @@ function SettingsPage() {
         </section>
 
         {/* C: Support */}
-        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-7 mb-6">
+        <section className="bg-[#0f1117] rounded-2xl border border-white/10 p-7 mb-6">
           <div className="flex items-start gap-3 mb-4">
             <div className="h-10 w-10 rounded-lg bg-purple-500/15 text-purple-300 flex items-center justify-center"><LifeBuoy className="h-5 w-5" /></div>
             <div>

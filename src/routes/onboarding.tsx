@@ -134,7 +134,7 @@ function OnboardingPage() {
             <span>Step {step} of 3</span>
             <span>{Math.round((step / 3) * 100)}%</span>
           </div>
-          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full bg-[#0084ff] transition-all duration-500"
               style={{ width: `${(step / 3) * 100}%` }}
@@ -143,7 +143,7 @@ function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white/5 rounded-2xl shadow-sm border border-white/10 p-8">
+        <div className="bg-[#0f1117] rounded-2xl border border-white/10 p-8">
           {step === 1 && (
             <>
               <h1 className="text-2xl font-semibold text-white mb-1">
@@ -162,7 +162,7 @@ function OnboardingPage() {
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="Automateup Agency"
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 bg-[#1a1f2e] text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   />
                 </div>
 
@@ -172,7 +172,7 @@ function OnboardingPage() {
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     placeholder="https://yourwebsite.com"
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 bg-[#1a1f2e] text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   />
                 </div>
 
@@ -183,7 +183,7 @@ function OnboardingPage() {
                   <select
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/15 bg-white/[0.08] text-white focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 bg-[#1a1f2e] text-white focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none text-sm"
                   >
                     <option value="" className="bg-[#0f1117] text-white">Select your industry</option>
                     {INDUSTRIES.map((i) => (
