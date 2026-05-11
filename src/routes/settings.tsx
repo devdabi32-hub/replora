@@ -184,7 +184,7 @@ function SettingsPage() {
         </section>
 
         {/* D: Danger Zone */}
-        <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-red-500/40 p-7">
+        <section className="bg-[#0f1117] rounded-2xl border border-red-500/40 p-7">
           <div className="flex items-start gap-3 mb-5">
             <div className="h-10 w-10 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center"><AlertTriangle className="h-5 w-5" /></div>
             <div>
