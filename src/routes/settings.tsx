@@ -93,7 +93,7 @@ function SettingsPage() {
       const aid = userRow?.agency_id ?? agencyId;
       if (!aid) throw new Error("No agency");
 
-      const steps = [
+      const dataSteps = [
         () => supabase.from("messages").delete().eq("agency_id", aid),
         () => supabase.from("conversations").delete().eq("agency_id", aid),
         () => supabase.from("contacts").delete().eq("agency_id", aid),
@@ -101,11 +101,20 @@ function SettingsPage() {
         () => supabase.from("business_profiles").delete().eq("agency_id", aid),
         () => supabase.from("users").delete().eq("agency_id", aid),
         () => supabase.from("agencies").delete().eq("id", aid),
-        () => supabase.rpc("delete_current_user"),
       ];
-      for (const run of steps) {
+      for (const run of dataSteps) {
         const { error } = await run();
         if (error) throw error;
+      }
+
+      // Delete the auth user via SECURITY DEFINER RPC. Required SQL on the
+      // database (run once):
+      //   create or replace function public.delete_current_user()
+      //   returns void language plpgsql security definer set search_path=public
+      //   as $$ begin delete from auth.users where id = auth.uid(); end; $$;
+      const { error: authErr } = await supabase.rpc("delete_current_user");
+      if (authErr && !/function .* does not exist/i.test(authErr.message)) {
+        throw authErr;
       }
 
       await supabase.auth.signOut();
