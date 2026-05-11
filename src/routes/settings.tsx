@@ -79,9 +79,53 @@ function SettingsPage() {
   const deleteAccount = async () => {
     if (deleteText !== "DELETE") return;
     setDeleting(true);
-    await supabase.auth.signOut();
-    toast.success("Account scheduled for deletion");
-    navigate({ to: "/login" });
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) throw new Error("No user");
+
+      const { data: userRow, error: userRowErr } = await supabase
+        .from("users")
+        .select("agency_id")
+        .eq("id", uid)
+        .maybeSingle();
+      if (userRowErr) throw userRowErr;
+      const aid = userRow?.agency_id ?? agencyId;
+      if (!aid) throw new Error("No agency");
+
+      const dataSteps = [
+        () => supabase.from("messages").delete().eq("agency_id", aid),
+        () => supabase.from("conversations").delete().eq("agency_id", aid),
+        () => supabase.from("contacts").delete().eq("agency_id", aid),
+        () => supabase.from("webhook_logs").delete().eq("agency_id", aid),
+        () => supabase.from("business_profiles").delete().eq("agency_id", aid),
+        () => supabase.from("users").delete().eq("agency_id", aid),
+        () => supabase.from("agencies").delete().eq("id", aid),
+      ];
+      for (const run of dataSteps) {
+        const { error } = await run();
+        if (error) throw error;
+      }
+
+      // Delete the auth user via SECURITY DEFINER RPC. Required SQL on the
+      // database (run once):
+      //   create or replace function public.delete_current_user()
+      //   returns void language plpgsql security definer set search_path=public
+      //   as $$ begin delete from auth.users where id = auth.uid(); end; $$;
+      const { error: authErr } = await supabase.rpc("delete_current_user");
+      if (authErr && !/function .* does not exist/i.test(authErr.message)) {
+        throw authErr;
+      }
+
+      await supabase.auth.signOut();
+      try { localStorage.clear(); sessionStorage.clear(); } catch { /* noop */ }
+      toast.success("Your account has been permanently deleted.");
+      navigate({ to: "/" });
+    } catch (e) {
+      console.error("delete account failed", e);
+      toast.error("Something went wrong. Please contact care@replora.com to delete your account.");
+      setDeleting(false);
+    }
   };
 
   const inputClass = "w-full h-11 px-3 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm";
