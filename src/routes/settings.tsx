@@ -93,7 +93,7 @@ function SettingsPage() {
       const aid = userRow?.agency_id ?? agencyId;
       if (!aid) throw new Error("No agency");
 
-      const steps: Array<() => Promise<{ error: unknown }>> = [
+      const steps = [
         () => supabase.from("messages").delete().eq("agency_id", aid),
         () => supabase.from("conversations").delete().eq("agency_id", aid),
         () => supabase.from("contacts").delete().eq("agency_id", aid),
