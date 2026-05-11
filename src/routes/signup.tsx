@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { MessageCircle, Loader2, Eye } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Sign up — Replora" }] }),
@@ -51,12 +52,7 @@ function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-black px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-[#0084ff] to-[#0066cc] flex items-center justify-center shadow-lg shadow-blue-500/30 mb-3">
-            <MessageCircle className="h-6 w-6 text-white" />
-            <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-black border border-white/10 flex items-center justify-center">
-              <Eye className="h-3 w-3 text-[#00c853]" />
-            </span>
-          </div>
+          <LogoMark className="h-12 w-12 mb-3" />
           <div className="text-xl font-semibold text-white">Replora</div>
           <div className="text-sm text-white/60">Your AI talks. You watch.</div>
         </div>
