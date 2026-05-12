@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { LogoMark } from "@/components/Logo";
+import { UpgradeProvider } from "@/components/UpgradeModal";
+import { TrialBanner } from "@/components/TrialBanner";
+import { PlanBadge } from "@/components/PlanBadge";
 
 const SUPPORT_MAILTO =
   "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
@@ -89,6 +92,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const initial = (userEmail[0] || "A").toUpperCase();
 
   return (
+    <UpgradeProvider>
     <div className="flex min-h-screen w-full bg-black text-white">
       <aside className="hidden md:flex w-64 flex-col bg-[#0f1117] text-slate-200 fixed inset-y-0 left-0 z-20 border-r border-white/[0.06]">
         {/* Logo */}
@@ -130,6 +134,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Bottom: Support + Admin */}
         <div className="p-3 border-t border-white/[0.06] space-y-1">
+          <div className="pb-2">
+            <PlanBadge />
+          </div>
           <a
             href={SUPPORT_MAILTO}
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/60 hover:bg-white/[0.04] hover:text-white transition-colors"
@@ -198,8 +205,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </nav>
 
       <main className="flex-1 min-w-0 pb-16 md:pb-0 md:ml-64">
+        <TrialBanner />
         {children}
       </main>
     </div>
+    </UpgradeProvider>
   );
 }
