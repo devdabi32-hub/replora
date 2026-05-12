@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
+import { useAccountStatus } from "@/hooks/useAccountStatus";
+import { useUpgradeModal } from "@/components/UpgradeModal";
 import {
   Search, Phone, Video, MoreVertical, Smile, Paperclip, Send,
   CheckCheck, Star, Trash2, StickyNote, Lock, MessageCircle, X, ArrowLeft,
@@ -66,6 +68,8 @@ function timeShort(d: Date) {
 }
 
 function InboxPage() {
+  const { isExpired } = useAccountStatus();
+  const { open: openUpgrade } = useUpgradeModal();
   const [messages, setMessages] = useState<Message[]>([]);
   const [contacts, setContacts] = useState<Record<string, Contact>>({});
   const [selected, setSelected] = useState<string | null>(null);
@@ -482,6 +486,16 @@ function InboxPage() {
             </div>
 
             {/* Input */}
+            {isExpired ? (
+              <div className="px-4 py-3 bg-[#202C33] flex-shrink-0">
+                <button
+                  onClick={openUpgrade}
+                  className="w-full px-4 py-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.08] text-white/70 text-sm text-left transition-colors"
+                >
+                  Upgrade to send and receive messages →
+                </button>
+              </div>
+            ) : (
             <div className="px-4 py-3 bg-[#202C33] flex items-center gap-2 flex-shrink-0">
               <button className="p-2 text-[#8696A0]" disabled><Smile className="h-5 w-5" /></button>
               <button className="p-2 text-[#8696A0]" disabled><Paperclip className="h-5 w-5" /></button>
@@ -493,6 +507,7 @@ function InboxPage() {
                 <Send className="h-4 w-4" />
               </button>
             </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-[#0B141A] text-center px-6">
