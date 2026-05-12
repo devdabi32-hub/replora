@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
+import { useAccountStatus } from "@/hooks/useAccountStatus";
+import { useUpgradeModal } from "@/components/UpgradeModal";
 import {
   User, CreditCard, AlertTriangle, Sparkles, LifeBuoy, Trash2, Check,
 } from "lucide-react";
@@ -20,6 +22,8 @@ const SUPPORT_MAILTO =
 
 function SettingsPage() {
   const navigate = useNavigate();
+  const { isExpired } = useAccountStatus();
+  const { open: openUpgrade } = useUpgradeModal();
   const [email, setEmail] = useState("");
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState("");
@@ -179,10 +183,17 @@ function SettingsPage() {
                 </select>
               </div>
             </div>
-            <button onClick={save} disabled={saving}
-              className="h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-60">
-              {saving ? "Saving…" : "Save Changes"}
-            </button>
+            {isExpired ? (
+              <button onClick={openUpgrade}
+                className="h-11 px-5 rounded-lg bg-white/[0.06] hover:bg-white/[0.08] text-white/70 text-sm font-semibold transition-colors">
+                Upgrade to make changes
+              </button>
+            ) : (
+              <button onClick={save} disabled={saving}
+                className="h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-60">
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
+            )}
           </div>
         </section>
 
