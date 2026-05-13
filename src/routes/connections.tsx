@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
   Phone, Plus, X, Eye, EyeOff, Copy, Check,
-  AlertTriangle, Wifi, Sparkles,
+  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/connections")({
@@ -58,6 +58,9 @@ function ConnectionsPage() {
   const [visible, setVisible] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState<string | null>(null);
   const [newKeyCopied, setNewKeyCopied] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Connection | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   const limit = isOwner ? Infinity : (PLAN_LIMITS[plan] ?? 1);
   const atLimit = !isOwner && connections.length >= limit;
@@ -109,7 +112,7 @@ function ConnectionsPage() {
   }, [agencyId]);
 
   const openModal = () => {
-    if (atLimit) return;
+    if (atLimit) { setShowLimitModal(true); return; }
     setNewApiKey(null);
     setNewLabel("");
     setNewPhoneId("");
@@ -148,14 +151,18 @@ function ConnectionsPage() {
     load(aid);
   };
 
-  const handleRemove = async (id: string) => {
-    const { error } = await supabase
-      .from("connected_phone_numbers")
-      .update({ is_active: false })
-      .eq("id", id);
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete || !agencyId) return;
+    setDeleting(true);
+    const { error } = await supabase.rpc("delete_connection_with_data", {
+      p_connection_id: confirmDelete.id,
+      p_agency_id: agencyId,
+    });
+    setDeleting(false);
     if (error) { toast.error(error.message); return; }
-    setConnections((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Connection removed");
+    setConfirmDelete(null);
+    toast.success("Connection deleted");
+    load(agencyId);
   };
 
   const toggleVisible = (id: string) =>
@@ -285,9 +292,9 @@ function ConnectionsPage() {
                     Active
                   </span>
                   <button
-                    onClick={() => handleRemove(c.id)}
+                    onClick={() => setConfirmDelete(c)}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
-                    title="Remove connection"
+                    title="Delete connection"
                   >
                     <X className="h-4 w-4" />
                   </button>
