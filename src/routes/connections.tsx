@@ -30,8 +30,9 @@ type Connection = {
 
 const PLAN_LIMITS: Record<string, number> = {
   trial: 1,
-  starter: 1,
-  growth: 5,
+  starter: 3,
+  pro: 10,
+  growth: 25,
   agency: Infinity,
 };
 
@@ -81,23 +82,12 @@ function ConnectionsPage() {
   }, []);
 
   const load = async (aid: string) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("connected_phone_numbers")
       .select("*")
       .eq("agency_id", aid)
-      .eq("is_active", true)
       .order("created_at", { ascending: false });
-    if (error) {
-      // is_active column may not exist yet — fall back to fetching all
-      const { data: fallback } = await supabase
-        .from("connected_phone_numbers")
-        .select("*")
-        .eq("agency_id", aid)
-        .order("created_at", { ascending: false });
-      setConnections((fallback ?? []) as Connection[]);
-    } else {
-      setConnections((data ?? []) as Connection[]);
-    }
+    setConnections((data ?? []) as Connection[]);
     setLoading(false);
   };
 
@@ -124,7 +114,6 @@ function ConnectionsPage() {
         agency_id: agencyId,
         label: newLabel.trim(),
         phone_number: newPhoneId.trim(),
-        is_active: true,
       })
       .select()
       .single();
@@ -178,6 +167,7 @@ function ConnectionsPage() {
         <button
           onClick={openModal}
           disabled={atLimit}
+          title={atLimit ? "Upgrade your plan to add more numbers" : undefined}
           className={`flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold transition-colors ${
             atLimit
               ? "bg-white/5 text-white/30 cursor-not-allowed"
