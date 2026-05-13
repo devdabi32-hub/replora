@@ -462,6 +462,192 @@ function ConnectionsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0f1117] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center shrink-0">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-semibold text-white">Delete {confirmDelete.label}?</h2>
+            </div>
+            <p className="text-sm text-white/60 mb-6">
+              This permanently deletes all messages and conversations for this number.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+                className="flex-1 h-11 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="flex-1 h-11 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Limit reached modal */}
+      {showLimitModal && (
+        <LimitReachedModal
+          plan={plan}
+          onClose={() => setShowLimitModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function LimitReachedModal({ plan, onClose }: { plan: string; onClose: () => void }) {
+  const extraPriceMap: Record<string, number> = { starter: 499, pro: 399, growth: 299 };
+  const upgradeMap: Record<string, { next: string; price: number; numbers: string }> = {
+    starter: { next: "Pro", price: 2499, numbers: "10 numbers" },
+    pro: { next: "Growth", price: 4999, numbers: "25 numbers" },
+    growth: { next: "Agency", price: 0, numbers: "unlimited numbers" },
+  };
+  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+  const isAgency = plan === "agency";
+  const extraPrice = extraPriceMap[plan];
+  const upgrade = upgradeMap[plan];
+
+  const extraHref = extraPrice
+    ? `https://wa.me/918989568529?text=${encodeURIComponent(
+        `Hi, I want to add an extra WhatsApp number to my ${planLabel} plan on Replora for ₹${extraPrice}/month`,
+      )}`
+    : `https://wa.me/918989568529?text=${encodeURIComponent(
+        `Hi, I want to add extra WhatsApp numbers on my Agency plan on Replora`,
+      )}`;
+
+  const upgradeHref = upgrade
+    ? `https://wa.me/918989568529?text=${encodeURIComponent(
+        `Hi, I want to upgrade to ${upgrade.next} plan on Replora`,
+      )}`
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#0f1117] border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl p-6">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Plan limit reached</h2>
+            <p className="text-sm text-white/60 mt-0.5">
+              Choose how you'd like to add more numbers.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Left: extra number */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col">
+            <div className="flex items-center gap-2 mb-2">
+              <Plus className="h-4 w-4 text-[#0084ff]" />
+              <h3 className="text-white font-semibold">Add extra number</h3>
+            </div>
+            {isAgency ? (
+              <>
+                <p className="text-sm text-white/60 mb-5 flex-1">
+                  Custom pricing for additional numbers on the Agency plan.
+                </p>
+                <a
+                  href={extraHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  Contact sales
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </>
+            ) : (
+              <>
+                <div className="mb-2">
+                  <span className="text-3xl font-semibold text-white">₹{extraPrice}</span>
+                  <span className="text-sm text-white/50">/month</span>
+                </div>
+                <p className="text-sm text-white/60 mb-5 flex-1">
+                  One additional WhatsApp number on your {planLabel} plan.
+                </p>
+                <a
+                  href={extraHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="h-11 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  Add for ₹{extraPrice}/mo
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </>
+            )}
+          </div>
+
+          {/* Right: upgrade plan */}
+          <div className="bg-white/5 border border-[#0084ff]/30 rounded-2xl p-5 flex flex-col relative">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-[#0084ff]" />
+              <h3 className="text-white font-semibold">Upgrade plan</h3>
+            </div>
+            {upgrade && upgrade.price > 0 ? (
+              <>
+                <div className="mb-2">
+                  <span className="text-3xl font-semibold text-white">₹{upgrade.price.toLocaleString("en-IN")}</span>
+                  <span className="text-sm text-white/50">/month</span>
+                </div>
+                <p className="text-sm text-white/60 mb-5 flex-1">
+                  Move to {upgrade.next} — {upgrade.numbers}.
+                </p>
+                <a
+                  href={upgradeHref!}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  Upgrade to {upgrade.next}
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </>
+            ) : upgrade ? (
+              <>
+                <div className="mb-2">
+                  <span className="text-3xl font-semibold text-white">Agency</span>
+                </div>
+                <p className="text-sm text-white/60 mb-5 flex-1">
+                  {upgrade.numbers} — custom pricing.
+                </p>
+                <a
+                  href={upgradeHref!}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  Upgrade to Agency
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </>
+            ) : (
+              <p className="text-sm text-white/60">You're already on the top plan.</p>
+            )}
+          </div>
+        </div>
+
+        <p className="text-xs text-white/40 text-center mt-5">
+          Payments confirmed via WhatsApp. Portal updates within 24 hours.
+        </p>
+      </div>
     </div>
   );
 }
