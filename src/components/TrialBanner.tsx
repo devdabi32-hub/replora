@@ -1,3 +1,4 @@
+import { AlertTriangle, Clock } from "lucide-react";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useUpgradeModal } from "@/components/UpgradeModal";
 
@@ -11,21 +12,40 @@ export function TrialBanner() {
   if (daysLeft <= 0) return null;
 
   const urgent = daysLeft <= 3;
-  const bg = urgent ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)";
-  const border = urgent ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)";
+
+  if (urgent) {
+    return (
+      <div className="w-full px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 bg-red-500/[0.12] border-b border-red-500/25">
+        <div className="flex items-center gap-2 min-w-0">
+          <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+          <span className="text-[13px] text-red-200 font-medium truncate">
+            <span className="font-bold text-red-300">
+              {daysLeft} {daysLeft === 1 ? "day" : "days"}
+            </span>{" "}
+            left — trial ending soon
+          </span>
+        </div>
+        <button
+          onClick={open}
+          className="text-[13px] font-semibold px-3 py-1.5 rounded-md text-white bg-red-500 hover:bg-red-600 transition-colors shrink-0"
+        >
+          Upgrade Now
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="w-full px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3"
-      style={{ background: bg, borderBottom: `1px solid ${border}` }}
-    >
-      <span className="text-[13px] text-white/85 font-medium">
-        ⏳ {daysLeft} {daysLeft === 1 ? "day" : "days"} left on your free trial
-      </span>
+    <div className="w-full px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 bg-amber-500/[0.08] border-b border-amber-500/20">
+      <div className="flex items-center gap-2 min-w-0">
+        <Clock className="h-4 w-4 text-amber-400 shrink-0" />
+        <span className="text-[13px] text-white/80 font-medium truncate">
+          {daysLeft} {daysLeft === 1 ? "day" : "days"} left on your free trial
+        </span>
+      </div>
       <button
         onClick={open}
-        className="text-[13px] font-semibold px-3 py-1.5 rounded-md text-white hover:opacity-90 transition-opacity"
-        style={{ backgroundColor: "#f59e0b" }}
+        className="text-[13px] font-semibold px-3 py-1.5 rounded-md text-white bg-amber-500 hover:bg-amber-600 transition-colors shrink-0"
       >
         Upgrade Plan →
       </button>

@@ -11,6 +11,8 @@ import {
   FileText,
   Phone,
   UserCog,
+  User,
+  Briefcase,
 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 
@@ -49,9 +51,17 @@ const USE_CASES = [
   { id: "human", label: "Human takeover when AI fails", icon: UserCog },
 ];
 
+type UsageType = "personal" | "agency";
+
+const USAGE_TYPES: { id: UsageType; label: string; sub: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "personal", label: "Personal / My Business",  sub: "I run my own AI agent",          icon: User },
+  { id: "agency",   label: "Agency / Client Work",    sub: "I manage AI for multiple clients", icon: Briefcase },
+];
+
 function OnboardingPage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
+  const [agencyId, setAgencyId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
 
   // Step 1
@@ -61,6 +71,7 @@ function OnboardingPage() {
   const [teamSize, setTeamSize] = useState<string>("");
 
   // Step 2
+  const [usageType, setUsageType] = useState<UsageType | "">("");
   const [useCases, setUseCases] = useState<string[]>([]);
 
   const [saving, setSaving] = useState(false);
@@ -89,6 +100,7 @@ function OnboardingPage() {
       setSaving(false);
       return;
     }
+    setAgencyId(userData.agency_id);
     const { error: err } = await supabase.from("business_profiles").upsert(
       {
         agency_id: userData.agency_id,
@@ -104,7 +116,25 @@ function OnboardingPage() {
     setStep(2);
   };
 
-  const goStep3 = () => setStep(3);
+  const saveStep2 = async () => {
+    if (!usageType) return;
+    // If agencyId wasn't cached from step 1 (e.g. user navigated back), re-fetch it
+    let aid = agencyId;
+    if (!aid && userId) {
+      const { data } = await supabase.from("users").select("agency_id").eq("id", userId).single();
+      aid = data?.agency_id ?? null;
+      if (aid) setAgencyId(aid);
+    }
+    if (!aid) { setError("Could not find your agency."); return; }
+    setSaving(true);
+    setError(null);
+    const { error: err } = await supabase
+      .from("business_profiles")
+      .upsert({ agency_id: aid, usage_type: usageType }, { onConflict: "agency_id" });
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    setStep(3);
+  };
 
   const toggleUseCase = (id: string) =>
     setUseCases((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -243,8 +273,46 @@ function OnboardingPage() {
               <h1 className="text-2xl font-semibold text-white mb-1">
                 How will you use Replora?
               </h1>
-              <p className="text-sm text-white/60 mb-6">Select all that apply</p>
+              <p className="text-sm text-white/60 mb-5">
+                Tell us how you work — this helps us set up your account
+              </p>
 
+              {/* Primary usage type — required */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                {USAGE_TYPES.map((u) => {
+                  const Icon = u.icon;
+                  const active = usageType === u.id;
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setUsageType(u.id)}
+                      className={`text-left px-4 py-4 rounded-xl border-2 transition-all flex items-start gap-3 ${
+                        active
+                          ? "border-[#0084ff] bg-[#0084ff]/15"
+                          : "border-white/10 hover:border-white/15 bg-white/5"
+                      }`}
+                    >
+                      <div
+                        className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          active ? "bg-[#0084ff] text-white" : "bg-white/10 text-white/60"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white">{u.label}</div>
+                        <div className="text-xs text-white/50 mt-0.5">{u.sub}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Secondary use case chips */}
+              <p className="text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
+                What will you use it for? (optional)
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {USE_CASES.map((u) => {
                   const active = useCases.includes(u.id);
@@ -254,26 +322,24 @@ function OnboardingPage() {
                       key={u.id}
                       type="button"
                       onClick={() => toggleUseCase(u.id)}
-                      className={`text-left px-4 py-4 rounded-lg border-2 transition-all flex items-start gap-3 ${
+                      className={`text-left px-4 py-3 rounded-lg border transition-all flex items-center gap-3 ${
                         active
-                          ? "border-[#0084ff] bg-[#0084ff]/15"
-                          : "border-white/10 hover:border-white/15 bg-white/5"
+                          ? "border-[#0084ff]/60 bg-[#0084ff]/10"
+                          : "border-white/10 hover:border-white/15 bg-white/[0.03]"
                       }`}
                     >
-                      <div
-                        className={`h-8 w-8 rounded-md flex items-center justify-center flex-shrink-0 ${
-                          active ? "bg-[#0084ff] text-white" : "bg-white/10 text-white/70"
-                        }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="text-sm font-medium text-white pt-1.5">
-                        {u.label}
-                      </div>
+                      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[#0084ff]" : "text-white/40"}`} />
+                      <span className="text-[13px] font-medium text-white/80">{u.label}</span>
                     </button>
                   );
                 })}
               </div>
+
+              {error && (
+                <div className="mt-4 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                  {error}
+                </div>
+              )}
 
               <div className="flex items-center gap-3 mt-6">
                 <button
@@ -283,9 +349,11 @@ function OnboardingPage() {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
                 <button
-                  onClick={goStep3}
-                  className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  onClick={saveStep2}
+                  disabled={!usageType || saving}
+                  className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                   Next <ArrowRight className="h-4 w-4" />
                 </button>
               </div>

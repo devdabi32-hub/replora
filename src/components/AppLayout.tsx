@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  LayoutDashboard, Inbox, Users, BookOpen, KeyRound,
+  LayoutDashboard, Inbox, Users, BookOpen, Plug,
   Headphones, LogOut, Trash2, User as UserIcon,
   Settings as SettingsIcon, UserPlus, FileDown,
 } from "lucide-react";
@@ -10,6 +10,8 @@ import { LogoMark } from "@/components/Logo";
 import { UpgradeProvider } from "@/components/UpgradeModal";
 import { TrialBanner } from "@/components/TrialBanner";
 import { PlanBadge } from "@/components/PlanBadge";
+import { PhoneProvider } from "@/contexts/PhoneContext";
+import { NumberSwitcher } from "@/components/NumberSwitcher";
 
 const SUPPORT_MAILTO =
   "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
@@ -19,7 +21,7 @@ const nav = [
   { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" as const },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/api-docs", label: "API Docs", icon: BookOpen },
-  { to: "/api-configuration", label: "API Configuration", icon: KeyRound },
+  { to: "/connections", label: "Connections", icon: Plug },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -93,6 +95,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <UpgradeProvider>
+    <PhoneProvider>
     <div className="flex min-h-screen w-full bg-black text-white">
       <aside className="hidden md:flex w-64 flex-col bg-[#0f1117] text-slate-200 fixed inset-y-0 left-0 z-20 border-r border-white/[0.06]">
         {/* Logo */}
@@ -103,6 +106,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="text-[11px] text-white/60 mt-0.5">Your AI talks. You watch.</div>
           </div>
         </div>
+
+        {/* Number Switcher */}
+        <NumberSwitcher />
 
         {/* Top nav */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -209,6 +215,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     </div>
+    </PhoneProvider>
     </UpgradeProvider>
   );
 }

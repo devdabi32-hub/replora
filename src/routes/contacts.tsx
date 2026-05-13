@@ -4,6 +4,7 @@ import { format, isToday, isThisWeek } from "date-fns";
 import { Search, Users, MessageSquare, ArrowRight } from "lucide-react";
 import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
+import { usePhoneContext } from "@/contexts/PhoneContext";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({ meta: [{ title: "Contacts — Replora" }] }),
@@ -22,17 +23,28 @@ function avatarColor(phone: string) {
 }
 
 function ContactsPage() {
+  const { selectedId } = usePhoneContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.from("messages").select("*").order("timestamp", { ascending: false }).then(({ data }) => {
+    const load = async () => {
+      if (selectedId) {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("*")
+          .eq("phone_number_id", selectedId)
+          .order("timestamp", { ascending: false });
+        if (!error) { setMessages((data ?? []) as Message[]); setLoading(false); return; }
+      }
+      const { data } = await supabase.from("messages").select("*").order("timestamp", { ascending: false });
       setMessages((data ?? []) as Message[]);
       setLoading(false);
-    });
-  }, []);
+    };
+    load();
+  }, [selectedId]);
 
   const contacts = useMemo(() => {
     const map = new Map<string, { phone: string; count: number; first: string; last: string }>();

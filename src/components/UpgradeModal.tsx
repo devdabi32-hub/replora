@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
-import { X, Check, Crown } from "lucide-react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { X, Check, Crown, MessageCircle } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 
@@ -14,23 +14,27 @@ const WA = (plan: string) =>
   `https://wa.me/919589568529?text=${encodeURIComponent(`Hi, I want to upgrade to ${plan} plan on Replora`)}`;
 
 type Plan = {
-  key: "Starter" | "Growth" | "Agency";
-  price: string;
+  key: string;
+  price: string | null;
+  tagline: string;
   features: string[];
   badge?: { label: string; cls: string };
   highlight?: boolean;
   accent: string;
+  cta: string;
 };
 
 const PLANS: Plan[] = [
   {
     key: "Starter",
-    price: "₹1,499",
+    price: "₹999",
+    tagline: "Start monitoring today",
     badge: { label: "Most Popular", cls: "bg-[#0084ff]/15 text-[#0084ff] border-[#0084ff]/30" },
     highlight: true,
     accent: "#0084ff",
+    cta: "Get Starter →",
     features: [
-      "1 WhatsApp number",
+      "3 WhatsApp numbers",
       "1 API key",
       "Unlimited messages",
       "Full AI dashboard",
@@ -38,22 +42,39 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    key: "Growth",
-    price: "₹3,999",
+    key: "Pro",
+    price: "₹2,499",
+    tagline: "For growing teams",
     accent: "#00c853",
+    cta: "Get Pro →",
     features: [
-      "5 WhatsApp numbers",
+      "10 WhatsApp numbers",
       "3 API keys",
       "Everything in Starter",
-      "Priority WhatsApp support",
-      "90-day data retention",
+      "Priority support",
+      "60-day data retention",
+    ],
+  },
+  {
+    key: "Growth",
+    price: "₹4,999",
+    tagline: "For scaling agencies",
+    accent: "#8b5cf6",
+    cta: "Get Growth →",
+    features: [
+      "25 WhatsApp numbers",
+      "5 API keys",
+      "Everything in Pro",
       "PDF reports",
+      "90-day data retention",
     ],
   },
   {
     key: "Agency",
-    price: "₹9,999",
+    price: null,
+    tagline: "Enterprise & white-label",
     accent: "#f59e0b",
+    cta: "Contact Sales",
     features: [
       "Unlimited numbers",
       "Unlimited API keys",
@@ -69,8 +90,12 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
   const open = useCallback(() => setOpen(true), []);
   const close = useCallback(() => setOpen(false), []);
-  const status = useAccountStatus();
-  const isExpired = status.isExpired;
+  const { isExpired, isOwner } = useAccountStatus();
+
+  // Auto-open wall when trial expires, never for owner
+  useEffect(() => {
+    if (isExpired && !isOwner) setOpen(true);
+  }, [isExpired, isOwner]);
 
   return (
     <UpgradeCtx.Provider value={{ open, close, isOpen }}>
@@ -78,7 +103,7 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
       {isOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-8 overflow-y-auto"
-          style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}
+          style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(8px)" }}
           onClick={() => { if (!isExpired) close(); }}
         >
           <div
@@ -99,61 +124,106 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
               <LogoMark className="h-9 w-9" />
               <span className="text-[13px] font-bold tracking-[0.18em] text-white">REPLORA</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Choose your plan</h2>
-            {isExpired && (
-              <p className="text-sm text-white/60 mt-2">
-                Your trial has ended. View your existing data below or upgrade to continue.
-              </p>
+
+            {isExpired ? (
+              <>
+                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+                  Your trial has ended
+                </h2>
+                <p className="text-sm text-white/60 mt-2">
+                  Upgrade to keep receiving messages. Your existing data is safe.
+                </p>
+              </>
+            ) : (
+              <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+                Choose your plan
+              </h2>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
               {PLANS.map((p) => (
                 <div
                   key={p.key}
-                  className="bg-[#0f1117] rounded-xl p-5 flex flex-col transition-colors"
+                  className="bg-[#0B141A] rounded-xl p-5 flex flex-col transition-all duration-150"
                   style={{
                     border: `1px solid ${p.highlight ? "#0084ff" : "rgba(255,255,255,0.07)"}`,
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#0084ff"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = p.highlight ? "#0084ff" : "rgba(255,255,255,0.07)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = p.accent; }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = p.highlight
+                      ? "#0084ff"
+                      : "rgba(255,255,255,0.07)";
+                  }}
                 >
                   <div className="flex items-center justify-between mb-3 min-h-[24px]">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">{p.key}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">
+                      {p.key}
+                    </span>
                     {p.badge && (
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${p.badge.cls}`}>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${p.badge.cls}`}
+                      >
                         {p.badge.label}
                       </span>
                     )}
                   </div>
-                  <div className="text-3xl font-semibold text-white">
-                    {p.price}
-                    <span className="text-sm font-normal text-white/60">/month</span>
-                  </div>
-                  <ul className="mt-5 space-y-2 text-sm text-white/80 flex-1">
+
+                  {p.price ? (
+                    <div className="text-3xl font-semibold text-white">
+                      {p.price}
+                      <span className="text-sm font-normal text-white/50">/mo</span>
+                    </div>
+                  ) : (
+                    <div className="text-2xl font-semibold text-white/80">Custom</div>
+                  )}
+                  <p className="text-[11px] text-white/40 mt-1 leading-tight">{p.tagline}</p>
+
+                  <ul className="mt-4 space-y-2 flex-1">
                     {p.features.map((f) => (
                       <li key={f} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 mt-0.5 shrink-0" style={{ color: p.accent }} />
-                        <span>{f}</span>
+                        <Check
+                          className="h-3.5 w-3.5 mt-0.5 shrink-0"
+                          style={{ color: p.accent }}
+                        />
+                        <span className="text-[13px] text-white/75">{f}</span>
                       </li>
                     ))}
                   </ul>
+
                   <a
                     href={WA(p.key)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-6 h-11 w-full rounded-lg flex items-center justify-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: p.accent }}
+                    className="mt-5 h-10 w-full rounded-lg flex items-center justify-center gap-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                    style={
+                      p.key === "Agency"
+                        ? {
+                            background: "rgba(255,255,255,0.08)",
+                            border: "1px solid rgba(255,255,255,0.15)",
+                          }
+                        : { backgroundColor: p.accent }
+                    }
                   >
-                    Get {p.key} →
+                    {p.key === "Agency" && <MessageCircle className="h-4 w-4" />}
+                    {p.cta}
                   </a>
                 </div>
               ))}
             </div>
 
-            {!isExpired && (
-              <p className="text-xs text-white/40 text-center mt-6">
+            {isExpired ? (
+              <div className="mt-5 text-center">
+                <button
+                  onClick={close}
+                  className="text-xs text-white/40 hover:text-white/60 transition-colors underline underline-offset-2"
+                >
+                  View existing data only
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-white/40 text-center mt-5">
                 <Crown className="inline h-3 w-3 mr-1 text-[#f59e0b]" />
-                Want to just browse your old data? Close this after selecting a plan.
+                All plans include WhatsApp setup support · Prices in INR · Billed monthly
               </p>
             )}
           </div>

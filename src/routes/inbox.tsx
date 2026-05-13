@@ -5,6 +5,7 @@ import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useUpgradeModal } from "@/components/UpgradeModal";
+import { usePhoneContext } from "@/contexts/PhoneContext";
 import {
   Search, Phone, Video, MoreVertical, Smile, Paperclip, Send,
   CheckCheck, Star, Trash2, StickyNote, Lock, MessageCircle, X, ArrowLeft,
@@ -70,6 +71,7 @@ function timeShort(d: Date) {
 function InboxPage() {
   const { isExpired } = useAccountStatus();
   const { open: openUpgrade } = useUpgradeModal();
+  const { selectedId } = usePhoneContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [contacts, setContacts] = useState<Record<string, Contact>>({});
   const [selected, setSelected] = useState<string | null>(null);
@@ -82,6 +84,14 @@ function InboxPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = async () => {
+    if (selectedId) {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("phone_number_id", selectedId)
+        .order("timestamp", { ascending: false });
+      if (!error) { setMessages((data ?? []) as Message[]); setLoading(false); return; }
+    }
     const { data } = await supabase.from("messages").select("*").order("timestamp", { ascending: false });
     setMessages((data ?? []) as Message[]);
     setLoading(false);
@@ -107,7 +117,7 @@ function InboxPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "contacts" }, loadContacts)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -490,9 +500,9 @@ function InboxPage() {
               <div className="px-4 py-3 bg-[#202C33] flex-shrink-0">
                 <button
                   onClick={openUpgrade}
-                  className="w-full px-4 py-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.08] text-white/70 text-sm text-left transition-colors"
+                  className="w-full px-4 py-3 rounded-lg bg-[#0084ff]/10 hover:bg-[#0084ff]/15 border border-[#0084ff]/20 text-[#0084ff] text-sm font-medium text-center transition-colors"
                 >
-                  Upgrade to send and receive messages →
+                  Upgrade to receive messages →
                 </button>
               </div>
             ) : (

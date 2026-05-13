@@ -16,8 +16,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as ConnectionsRouteImport } from './routes/connections'
 import { Route as ApiDocsRouteImport } from './routes/api-docs'
 import { Route as ApiConfigurationRouteImport } from './routes/api-configuration'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SignupRoute = SignupRouteImport.update({
@@ -55,6 +57,11 @@ const ContactsRoute = ContactsRouteImport.update({
   path: '/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnectionsRoute = ConnectionsRouteImport.update({
+  id: '/connections',
+  path: '/connections',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDocsRoute = ApiDocsRouteImport.update({
   id: '/api-docs',
   path: '/api-docs',
@@ -65,6 +72,11 @@ const ApiConfigurationRoute = ApiConfigurationRouteImport.update({
   path: '/api-configuration',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -73,8 +85,10 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
@@ -85,8 +99,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
@@ -98,8 +114,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
@@ -112,8 +130,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/connections'
     | '/contacts'
     | '/dashboard'
     | '/inbox'
@@ -124,8 +144,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/connections'
     | '/contacts'
     | '/dashboard'
     | '/inbox'
@@ -136,8 +158,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/connections'
     | '/contacts'
     | '/dashboard'
     | '/inbox'
@@ -149,8 +173,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   ApiConfigurationRoute: typeof ApiConfigurationRoute
   ApiDocsRoute: typeof ApiDocsRoute
+  ConnectionsRoute: typeof ConnectionsRoute
   ContactsRoute: typeof ContactsRoute
   DashboardRoute: typeof DashboardRoute
   InboxRoute: typeof InboxRoute
@@ -211,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connections': {
+      id: '/connections'
+      path: '/connections'
+      fullPath: '/connections'
+      preLoaderRoute: typeof ConnectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api-docs': {
       id: '/api-docs'
       path: '/api-docs'
@@ -225,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -237,8 +277,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   ApiConfigurationRoute: ApiConfigurationRoute,
   ApiDocsRoute: ApiDocsRoute,
+  ConnectionsRoute: ConnectionsRoute,
   ContactsRoute: ContactsRoute,
   DashboardRoute: DashboardRoute,
   InboxRoute: InboxRoute,
@@ -250,3 +292,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

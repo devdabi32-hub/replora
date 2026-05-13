@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import { MessageSquare, Users, Bot, Clock, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
+import { usePhoneContext } from "@/contexts/PhoneContext";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Replora" }] }),
@@ -23,15 +24,26 @@ function avatarColor(phone: string) {
 }
 
 function DashboardPage() {
+  const { selectedId } = usePhoneContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("messages").select("*").order("timestamp", { ascending: false }).then(({ data }) => {
+    const load = async () => {
+      if (selectedId) {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("*")
+          .eq("phone_number_id", selectedId)
+          .order("timestamp", { ascending: false });
+        if (!error) { setMessages((data ?? []) as Message[]); setLoading(false); return; }
+      }
+      const { data } = await supabase.from("messages").select("*").order("timestamp", { ascending: false });
       setMessages((data ?? []) as Message[]);
       setLoading(false);
-    });
-  }, []);
+    };
+    load();
+  }, [selectedId]);
 
   const stats = useMemo(() => {
     const inbound = messages.filter((m) => m.direction === "inbound").length;

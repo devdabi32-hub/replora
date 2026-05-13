@@ -6,6 +6,7 @@ const SUPABASE_KEY = "sb_publishable_ZteRAtqnraxCKTi5KBpkQw_FiwBtKfd";
 export type Message = {
   id: string;
   phone_number: string;
+  phone_number_id?: string | null;
   direction: "inbound" | "outbound";
   message_text: string;
   sender_type: string | null;
