@@ -165,7 +165,7 @@ function AdminPage() {
                   <tr key={a.id} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.03] transition-colors">
                     <td className="py-3 px-5">
                       <div className="flex items-center gap-2">
-                        {a.is_owner && <Crown className="h-3.5 w-3.5 text-[#f59e0b] shrink-0" title="Owner" />}
+                        {a.is_owner && <Crown className="h-3.5 w-3.5 text-[#f59e0b] shrink-0" aria-label="Owner" />}
                         <div>
                           <div className="font-medium text-white text-[13px] leading-tight">
                             {a.name ?? "Unnamed"}
