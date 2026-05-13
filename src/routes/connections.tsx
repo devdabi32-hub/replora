@@ -196,11 +196,10 @@ function ConnectionsPage() {
         </div>
         <button
           onClick={openModal}
-          disabled={atLimit}
-          title={atLimit ? "Upgrade your plan to add more numbers" : undefined}
+          title={atLimit ? "Plan limit reached — see options" : undefined}
           className={`flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold transition-colors ${
             atLimit
-              ? "bg-white/5 text-white/30 cursor-not-allowed"
+              ? "bg-white/10 text-white/60 hover:bg-white/15"
               : "bg-[#0084ff] hover:bg-[#0066cc] text-white"
           }`}
         >
