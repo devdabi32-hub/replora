@@ -68,26 +68,39 @@ function ConnectionsPage() {
   // Step 1 + 2: auth → users table → agency_id
   useEffect(() => {
     const resolveAgency = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      const { data: userRow, error } = await supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) { setLoading(false); return; }
+      const { data: userRow } = await supabase
         .from("users")
         .select("agency_id")
-        .eq("id", user.id)
+        .eq("id", userId)
         .single();
-      if (error || !userRow?.agency_id) { setLoading(false); return; }
-      setAgencyId(userRow.agency_id);
+      const aid = userRow?.agency_id;
+      if (!aid) { setLoading(false); return; }
+      setAgencyId(aid);
     };
     resolveAgency();
   }, []);
 
   const load = async (aid: string) => {
-    const { data } = await supabase
+    const { data: rows, error } = await supabase
       .from("connected_phone_numbers")
-      .select("*")
-      .eq("agency_id", aid)
-      .order("created_at", { ascending: false });
-    setConnections((data ?? []) as Connection[]);
+      .select("id, display_name, phone_number_id, api_key, message_count, connected_at, is_active")
+      .eq("agency_id", aid);
+    console.log("agencyId:", aid);
+    console.log("connections:", rows);
+    console.log("error:", error);
+    const mapped: Connection[] = (rows ?? []).map((r: any) => ({
+      id: r.id,
+      agency_id: aid,
+      label: r.display_name,
+      phone_number: r.phone_number_id,
+      api_key: r.api_key,
+      created_at: r.connected_at,
+      is_active: r.is_active,
+    }));
+    setConnections(mapped);
     setLoading(false);
   };
 
@@ -106,23 +119,33 @@ function ConnectionsPage() {
   const handleAdd = async () => {
     if (!newLabel.trim()) { toast.error("Display name required"); return; }
     if (!newPhoneId.trim()) { toast.error("Phone Number ID required"); return; }
-    if (!agencyId) return;
     setSubmitting(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("agency_id")
+      .eq("id", session!.user.id)
+      .single();
     const { data, error } = await supabase
       .from("connected_phone_numbers")
       .insert({
-        agency_id: agencyId,
-        label: newLabel.trim(),
-        phone_number: newPhoneId.trim(),
+        agency_id: userRow!.agency_id,
+        phone_number_id: newPhoneId.trim(),
+        display_name: newLabel.trim(),
+        is_active: true,
       })
       .select()
       .single();
+    console.log("insert result:", data);
+    console.log("insert error:", error);
     setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
-    const finalKey = (data as Connection)?.api_key ?? "";
+    if (error) { alert("Error: " + error.message); return; }
+    const finalKey = (data as any)?.api_key ?? "";
     setNewApiKey(finalKey);
     toast.success("Connection added");
-    if (agencyId) load(agencyId);
+    const aid = userRow!.agency_id;
+    if (!agencyId) setAgencyId(aid);
+    load(aid);
   };
 
   const handleRemove = async (id: string) => {
