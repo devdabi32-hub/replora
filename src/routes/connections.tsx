@@ -118,24 +118,22 @@ function ConnectionsPage() {
     if (!newPhoneId.trim()) { toast.error("Phone Number ID required"); return; }
     if (!agencyId) return;
     setSubmitting(true);
-    const apiKey = genApiKey();
     const { data, error } = await supabase
       .from("connected_phone_numbers")
       .insert({
         agency_id: agencyId,
         label: newLabel.trim(),
         phone_number: newPhoneId.trim(),
-        api_key: apiKey,
         is_active: true,
       })
       .select()
       .single();
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
-    const finalKey = (data as Connection)?.api_key ?? apiKey;
+    const finalKey = (data as Connection)?.api_key ?? "";
     setNewApiKey(finalKey);
     toast.success("Connection added");
-    load();
+    if (agencyId) load(agencyId);
   };
 
   const handleRemove = async (id: string) => {
