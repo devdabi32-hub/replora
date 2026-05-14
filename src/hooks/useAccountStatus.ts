@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
 const OWNER_EMAIL = "devdabi32@gmail.com";
 
-export type PlanName = "trial" | "starter" | "growth" | "agency" | string;
+export type PlanName = "trial" | "starter" | "pro" | "growth" | "agency" | string;
 export type PlanStatus = "active" | "trialing" | "trial" | "expired" | string;
 
 export type AccountStatus = {
@@ -17,7 +17,7 @@ export type AccountStatus = {
   isOwner: boolean;
   isExpired: boolean;
   daysLeft: number;
-  refresh: () => Promise<void>;
+  refresh: () => void;
 };
 
 const DEFAULT: AccountStatus = {
@@ -31,38 +31,44 @@ const DEFAULT: AccountStatus = {
   isOwner: false,
   isExpired: false,
   daysLeft: 0,
-  refresh: async () => {},
+  refresh: () => { },
 };
 
 export function useAccountStatus(): AccountStatus {
   const [state, setState] = useState<AccountStatus>(DEFAULT);
+  const [agencyId, setAgencyId] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) {
       setState({ ...DEFAULT, loading: false });
       return;
     }
+
     const email = user.email ?? "";
+
     const { data: userRow } = await supabase
       .from("users")
       .select("agency_id")
       .eq("id", user.id)
       .maybeSingle();
-    const agencyId = (userRow?.agency_id as string | undefined) ?? null;
+
+    const foundAgencyId = (userRow?.agency_id as string | undefined) ?? null;
+    setAgencyId(foundAgencyId);
 
     let plan: PlanName = "trial";
     let plan_status: PlanStatus = "trial";
     let trial_ends_at: string | null = null;
     let is_owner = false;
 
-    if (agencyId) {
+    if (foundAgencyId) {
       const { data: agency } = await supabase
         .from("agencies")
         .select("plan, plan_status, trial_ends_at, is_owner")
-        .eq("id", agencyId)
+        .eq("id", foundAgencyId)
         .maybeSingle();
+
       if (agency) {
         plan = (agency.plan as string) ?? "trial";
         plan_status = (agency.plan_status as string) ?? "trial";
@@ -77,10 +83,9 @@ export function useAccountStatus(): AccountStatus {
       : 0;
     const isExpired = isOwner ? false : plan_status === "expired";
 
-    setState((prev) => ({
-      ...prev,
+    setState({
       loading: false,
-      agencyId,
+      agencyId: foundAgencyId,
       email,
       plan,
       plan_status,
@@ -90,14 +95,47 @@ export function useAccountStatus(): AccountStatus {
       isExpired,
       daysLeft,
       refresh: load,
-    }));
-  };
+    });
+  }, []);
 
+  // ── Initial load + auth state listener ──
   useEffect(() => {
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { load(); });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      load();
+    });
+    return () => {
+      authSub.subscription.unsubscribe();
+    };
+  }, [load]);
+
+  // ── Supabase Realtime — re-fetch when agency plan changes ──
+  useEffect(() => {
+    if (!agencyId) return;
+
+    const channel = supabase
+      .channel(`agency-plan-${agencyId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "agencies",
+          filter: `id=eq.${agencyId}`,
+        },
+        (payload) => {
+          console.log("Plan updated via Realtime:", payload.new);
+          load();
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [agencyId, load]);
 
   return state;
 }
