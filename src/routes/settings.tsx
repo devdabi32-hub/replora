@@ -5,9 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useUpgradeModal } from "@/components/UpgradeModal";
-import {
-  User, CreditCard, AlertTriangle, Sparkles, LifeBuoy, Trash2, Check,
-} from "lucide-react";
+import { User, AlertTriangle, LifeBuoy, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Replora" }] }),
@@ -195,35 +193,6 @@ function SettingsPage() {
               </button>
             )}
           </div>
-        </section>
-
-        {/* B: Billing & Plans */}
-        <section className="bg-[#0f1117] rounded-2xl border border-white/10 p-7 mb-6">
-          <div className="flex items-start gap-3 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-[#00c853]/15 text-[#00c853] flex items-center justify-center"><CreditCard className="h-5 w-5" /></div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">Billing & Plans</h2>
-              <p className="text-sm text-white/60 mt-0.5">Your subscription details.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#0084ff]/15 text-[#0084ff] border border-[#0084ff]/30">Starter</span>
-            <span className="text-[11px] text-white/60">Current Plan</span>
-          </div>
-          <div className="text-3xl font-semibold text-white">₹1499<span className="text-base font-normal text-white/60">/month</span></div>
-          <ul className="mt-5 space-y-2 text-sm text-white/80">
-            {["1 WhatsApp number","Unlimited messages","Full portal access","AI monitoring dashboard","Email support"].map((f) => (
-              <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#00c853]" /> {f}</li>
-            ))}
-          </ul>
-          <button onClick={() => navigate({ to: "/api-configuration" })}
-            className="mt-6 inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors">
-            <Sparkles className="h-4 w-4" /> Upgrade Plan
-          </button>
-          <button onClick={() => navigate({ to: "/pricing" })}
-            className="mt-6 ml-3 inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-white text-sm font-semibold transition-colors">
-            Manage Plan
-          </button>
         </section>
 
         {/* C: Support */}

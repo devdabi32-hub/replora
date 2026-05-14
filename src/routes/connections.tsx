@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -47,6 +47,7 @@ const inputClass =
 
 function ConnectionsPage() {
   const { plan, isOwner } = useAccountStatus();
+  const navigate = useNavigate();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,8 @@ function ConnectionsPage() {
 
   const limit = isOwner ? Infinity : (PLAN_LIMITS[plan] ?? 1);
   const atLimit = !isOwner && connections.length >= limit;
+  const extraPriceMap: Record<string, number> = { starter: 499, pro: 399, growth: 299 };
+  const extraPrice = extraPriceMap[plan];
   const usedCount = connections.length;
   const limitLabel = limit === Infinity ? "∞" : String(limit);
   const barPercent = limit === Infinity ? 0 : Math.min(100, (usedCount / limit) * 100);
@@ -194,18 +197,23 @@ function ConnectionsPage() {
             Manage your connected WhatsApp numbers.
           </p>
         </div>
-        <button
-          onClick={openModal}
-          title={atLimit ? "Plan limit reached — see options" : undefined}
-          className={`flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold transition-colors ${
-            atLimit
-              ? "bg-white/10 text-white/60 hover:bg-white/15"
-              : "bg-[#0084ff] hover:bg-[#0066cc] text-white"
-          }`}
-        >
-          <Plus className="h-4 w-4" />
-          Add Connection
-        </button>
+        {atLimit ? (
+          <button
+            onClick={() => navigate({ to: "/pricing" })}
+            className="flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold transition-colors bg-[#0084ff] hover:bg-[#0066cc] text-white"
+          >
+            <Plus className="h-4 w-4" />
+            {extraPrice ? `Add Number — ₹${extraPrice}/mo` : "Add Number"}
+          </button>
+        ) : (
+          <button
+            onClick={openModal}
+            className="flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold transition-colors bg-[#0084ff] hover:bg-[#0066cc] text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Add Connection
+          </button>
+        )}
       </div>
 
       {/* Usage bar */}
@@ -244,13 +252,13 @@ function ConnectionsPage() {
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               Plan limit reached. Upgrade to add more numbers.
             </p>
-            <a
-              href="mailto:care@replora.in?subject=Upgrade%20Plan"
+            <button
+              onClick={() => navigate({ to: "/pricing" })}
               className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-xs font-semibold transition-colors"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Upgrade Plan
-            </a>
+            </button>
           </div>
         )}
       </div>
