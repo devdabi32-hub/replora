@@ -17,14 +17,15 @@ import { useAccountStatus } from "@/hooks/useAccountStatus";
 const SUPPORT_MAILTO =
   "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
 
-const baseNav = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; badgeKey?: "inbox" };
+const baseNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" as const },
+  { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/api-docs", label: "API Docs", icon: BookOpen },
   { to: "/connections", label: "Connections", icon: Plug },
 ];
-const pricingNavItem = { to: "/pricing", label: "Pricing", icon: Tag };
+const pricingNavItem: NavItem = { to: "/pricing", label: "Pricing", icon: Tag };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
