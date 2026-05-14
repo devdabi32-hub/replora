@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, Inbox, Users, BookOpen, Plug,
-  Headphones, LogOut, Trash2, User as UserIcon, Tag,
+  Headphones, LogOut, Trash2, Tag,
   Settings as SettingsIcon, UserPlus, FileDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
