@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, Inbox, Users, BookOpen, Plug,
-  Headphones, LogOut, Trash2, User as UserIcon,
+  Headphones, LogOut, Trash2, User as UserIcon, Tag,
   Settings as SettingsIcon, UserPlus, FileDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -12,21 +12,24 @@ import { TrialBanner } from "@/components/TrialBanner";
 import { PlanBadge } from "@/components/PlanBadge";
 import { PhoneProvider } from "@/contexts/PhoneContext";
 import { NumberSwitcher } from "@/components/NumberSwitcher";
+import { useAccountStatus } from "@/hooks/useAccountStatus";
 
 const SUPPORT_MAILTO =
   "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
 
-const nav = [
+const baseNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" as const },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/api-docs", label: "API Docs", icon: BookOpen },
   { to: "/connections", label: "Connections", icon: Plug },
 ];
+const pricingNavItem = { to: "/pricing", label: "Pricing", icon: Tag };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const { plan, plan_status } = useAccountStatus();
   const [inboxCount, setInboxCount] = useState(0);
   const [authChecked, setAuthChecked] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -92,6 +95,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const initial = (userEmail[0] || "A").toUpperCase();
+  const showPricing = plan === "trial" || plan_status === "expired";
+  const nav = showPricing ? [...baseNav, pricingNavItem] : baseNav;
 
   return (
     <UpgradeProvider>
