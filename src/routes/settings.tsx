@@ -220,6 +220,10 @@ function SettingsPage() {
             className="mt-6 inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors">
             <Sparkles className="h-4 w-4" /> Upgrade Plan
           </button>
+          <button onClick={() => navigate({ to: "/pricing" })}
+            className="mt-6 ml-3 inline-flex items-center gap-1.5 h-11 px-5 rounded-lg bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-white text-sm font-semibold transition-colors">
+            Manage Plan
+          </button>
         </section>
 
         {/* C: Support */}
