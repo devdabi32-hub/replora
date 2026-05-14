@@ -96,8 +96,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const initial = (userEmail[0] || "A").toUpperCase();
-  const showPricing = plan === "trial" || plan_status === "expired";
-  const nav = showPricing ? [...baseNav, pricingNavItem] : baseNav;
+  const hidePricing = plan === "agency";
+  const nav = hidePricing ? baseNav : [...baseNav, pricingNavItem];
+  void plan_status;
 
   return (
     <UpgradeProvider>
@@ -176,9 +177,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {menuOpen && (
               <div className="absolute bottom-full mb-2 left-0 right-0 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl py-1.5 text-sm overflow-hidden">
-                <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
-                  <UserIcon className="h-4 w-4" /> View Profile
-                </Link>
                 <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-white/80 hover:bg-white/5 hover:text-white">
                   <SettingsIcon className="h-4 w-4" /> Settings
                 </Link>
