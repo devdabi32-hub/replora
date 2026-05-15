@@ -31,7 +31,7 @@ const DEFAULT: AccountStatus = {
   isOwner: false,
   isExpired: false,
   daysLeft: 0,
-  refresh: () => {},
+  refresh: () => { },
 };
 
 export function useAccountStatus(): AccountStatus {
@@ -39,84 +39,49 @@ export function useAccountStatus(): AccountStatus {
   const [agencyId, setAgencyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
     if (!user) {
       setState({ ...DEFAULT, loading: false });
       return;
     }
 
     const email = user.email ?? "";
-    console.log("[useAccountStatus] Loading for:", email);
 
-    // Primary: resolve agency_id via users table
     const { data: userRow } = await supabase
       .from("users")
       .select("agency_id")
       .eq("id", user.id)
       .maybeSingle();
 
-    let foundAgencyId = (userRow?.agency_id as string | undefined) ?? null;
-    console.log("[useAccountStatus] users.agency_id:", foundAgencyId);
+    const foundAgencyId = (userRow?.agency_id as string | undefined) ?? null;
+    setAgencyId(foundAgencyId);
 
     let plan: PlanName = "trial";
     let plan_status: PlanStatus = "trial";
     let trial_ends_at: string | null = null;
     let is_owner = false;
-    let agencyEmail = email;
 
     if (foundAgencyId) {
       const { data: agency } = await supabase
         .from("agencies")
-        .select("plan, plan_status, trial_ends_at, is_owner, email")
+        .select("plan, plan_status, trial_ends_at, is_owner")
         .eq("id", foundAgencyId)
         .maybeSingle();
 
-      console.log("[useAccountStatus] agency row:", agency);
       if (agency) {
         plan = (agency.plan as string) ?? "trial";
         plan_status = (agency.plan_status as string) ?? "trial";
         trial_ends_at = (agency.trial_ends_at as string) ?? null;
         is_owner = agency.is_owner === true;
-        agencyEmail = (agency.email as string) ?? email;
-      }
-    } else {
-      // Fallback: users table had no row — try to find agency directly by email
-      console.log("[useAccountStatus] No users row found, trying email fallback:", email);
-      const { data: agencyByEmail } = await supabase
-        .from("agencies")
-        .select("id, plan, plan_status, trial_ends_at, is_owner, email")
-        .eq("email", email)
-        .maybeSingle();
-
-      console.log("[useAccountStatus] agency by email:", agencyByEmail);
-      if (agencyByEmail) {
-        foundAgencyId = agencyByEmail.id as string;
-        plan = (agencyByEmail.plan as string) ?? "trial";
-        plan_status = (agencyByEmail.plan_status as string) ?? "trial";
-        trial_ends_at = (agencyByEmail.trial_ends_at as string) ?? null;
-        is_owner = agencyByEmail.is_owner === true;
-        agencyEmail = (agencyByEmail.email as string) ?? email;
       }
     }
 
-    setAgencyId(foundAgencyId);
-
-    const isOwner = is_owner === true || email === OWNER_EMAIL || agencyEmail === OWNER_EMAIL;
-
-    // daysLeft only meaningful for trial plan
-    const daysLeft =
-      plan === "trial" && trial_ends_at
-        ? Math.max(0, Math.ceil((new Date(trial_ends_at).getTime() - Date.now()) / 86400000))
-        : 0;
-
-    // isExpired = true ONLY when plan_status = 'expired' AND plan = 'trial'
-    // Paid plans (starter/pro/growth/agency) with plan_status = 'active' are NEVER expired
-    const isExpired = isOwner
-      ? false
-      : plan_status === "expired" && plan === "trial";
-
-    console.log("[useAccountStatus] Final state:", { plan, plan_status, isOwner, isExpired, daysLeft, foundAgencyId });
+    const isOwner = is_owner === true || email === OWNER_EMAIL;
+    const daysLeft = trial_ends_at
+      ? Math.max(0, Math.ceil((new Date(trial_ends_at).getTime() - Date.now()) / 86400000))
+      : 0;
+    const isExpired = isOwner ? false : plan_status === "expired";
 
     setState({
       loading: false,
@@ -133,7 +98,7 @@ export function useAccountStatus(): AccountStatus {
     });
   }, []);
 
-  // Initial load + auth state listener
+  // ── Initial load + auth state listener ──
   useEffect(() => {
     load();
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
@@ -144,12 +109,12 @@ export function useAccountStatus(): AccountStatus {
     };
   }, [load]);
 
-  // Realtime: re-fetch immediately when agency row is updated in DB
+  // ── Supabase Realtime — re-fetch when agency plan changes ──
   useEffect(() => {
     if (!agencyId) return;
 
     const channel = supabase
-      .channel(`agency-status-${agencyId}`)
+      .channel(`agency-plan-${agencyId}`)
       .on(
         "postgres_changes",
         {
@@ -159,12 +124,12 @@ export function useAccountStatus(): AccountStatus {
           filter: `id=eq.${agencyId}`,
         },
         (payload) => {
-          console.log("[useAccountStatus] Realtime UPDATE received:", payload.new);
+          console.log("Plan updated via Realtime:", payload.new);
           load();
         }
       )
       .subscribe((status) => {
-        console.log("[useAccountStatus] Realtime channel status:", status);
+        console.log("Realtime status:", status);
       });
 
     return () => {

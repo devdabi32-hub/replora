@@ -51,30 +51,13 @@ function PricingPage() {
   const fetchPlan = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) { setLoading(false); return; }
-    const { data: userRow } = await supabase.from("users").select("agency_id").eq("id", session.user.id).maybeSingle();
-    const aid = userRow?.agency_id ?? null;
-    if (aid) {
-      setAgencyId(aid);
-      const { data: agency } = await supabase
-        .from("agencies")
-        .select("plan, plan_status, is_owner, email")
-        .eq("id", aid)
-        .maybeSingle();
+    const { data: userRow } = await supabase.from("users").select("agency_id").eq("id", session.user.id).single();
+    if (userRow?.agency_id) {
+      setAgencyId(userRow.agency_id);
+      const { data: agency } = await supabase.from("agencies").select("plan, is_owner, email").eq("id", userRow.agency_id).single();
       if (agency) {
         setPlan(((agency.plan as string) ?? "trial") as PlanKey);
         setIsOwner(agency.is_owner === true || agency.email === OWNER_EMAIL || session.user.email === OWNER_EMAIL);
-      }
-    } else {
-      // Fallback: find agency by email
-      const { data: agencyByEmail } = await supabase
-        .from("agencies")
-        .select("id, plan, plan_status, is_owner, email")
-        .eq("email", session.user.email ?? "")
-        .maybeSingle();
-      if (agencyByEmail) {
-        setAgencyId(agencyByEmail.id as string);
-        setPlan(((agencyByEmail.plan as string) ?? "trial") as PlanKey);
-        setIsOwner(agencyByEmail.is_owner === true || agencyByEmail.email === OWNER_EMAIL || session.user.email === OWNER_EMAIL);
       }
     }
     setLoading(false);
@@ -88,7 +71,6 @@ function PricingPage() {
       .channel(`pricing-realtime-${agencyId}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "agencies", filter: `id=eq.${agencyId}` },
         (payload) => {
-          console.log("[pricing] Realtime UPDATE:", payload.new);
           const newPlan = (payload.new as { plan?: string }).plan;
           if (newPlan) setPlan(newPlan as PlanKey);
         }

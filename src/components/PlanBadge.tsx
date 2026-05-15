@@ -24,12 +24,9 @@ export function PlanBadge() {
   } else if (plan === "starter") {
     label = "Starter";
     cls = "bg-[#0084ff]/15 text-[#0084ff] border-[#0084ff]/30";
-  } else if (plan === "pro") {
-    label = "Pro";
-    cls = "bg-[#00c853]/15 text-[#00c853] border-[#00c853]/30";
   } else if (plan === "growth") {
     label = "Growth";
-    cls = "bg-[#8b5cf6]/15 text-[#8b5cf6] border-[#8b5cf6]/30";
+    cls = "bg-[#00c853]/15 text-[#00c853] border-[#00c853]/30";
   } else if (plan === "agency") {
     label = "Agency";
     cls = "bg-[#f59e0b]/15 text-[#f59e0b] border-[#f59e0b]/30";

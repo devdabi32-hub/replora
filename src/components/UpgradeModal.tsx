@@ -10,6 +10,9 @@ export function useUpgradeModal() {
   return useContext(UpgradeCtx);
 }
 
+const WA = (plan: string) =>
+  `https://wa.me/919589568529?text=${encodeURIComponent(`Hi, I want to upgrade to ${plan} plan on Replora`)}`;
+
 type Plan = {
   key: string;
   price: string | null;
@@ -19,7 +22,6 @@ type Plan = {
   highlight?: boolean;
   accent: string;
   cta: string;
-  link: string;
 };
 
 const PLANS: Plan[] = [
@@ -31,7 +33,6 @@ const PLANS: Plan[] = [
     highlight: true,
     accent: "#0084ff",
     cta: "Get Starter →",
-    link: "https://rzp.io/rzp/3Km2lwAT",
     features: [
       "3 WhatsApp numbers",
       "1 API key",
@@ -46,7 +47,6 @@ const PLANS: Plan[] = [
     tagline: "For growing teams",
     accent: "#00c853",
     cta: "Get Pro →",
-    link: "https://rzp.io/rzp/OwCF0wg",
     features: [
       "10 WhatsApp numbers",
       "3 API keys",
@@ -61,7 +61,6 @@ const PLANS: Plan[] = [
     tagline: "For scaling agencies",
     accent: "#8b5cf6",
     cta: "Get Growth →",
-    link: "https://rzp.io/rzp/2jdywV5",
     features: [
       "25 WhatsApp numbers",
       "5 API keys",
@@ -76,7 +75,6 @@ const PLANS: Plan[] = [
     tagline: "Enterprise & white-label",
     accent: "#f59e0b",
     cta: "Contact Sales",
-    link: "https://wa.me/918989568529",
     features: [
       "Unlimited numbers",
       "Unlimited API keys",
@@ -193,7 +191,7 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
                   </ul>
 
                   <a
-                    href={p.link}
+                    href={WA(p.key)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-5 h-10 w-full rounded-lg flex items-center justify-center gap-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
