@@ -62,8 +62,14 @@ function ConnectionsPage() {
   const [confirmDelete, setConfirmDelete] = useState<Connection | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [addonNumbers, setAddonNumbers] = useState(0);
 
-  const limit = isOwner ? Infinity : (PLAN_LIMITS[plan] ?? 1);
+  const basePlanLimit = PLAN_LIMITS[plan] ?? 1;
+  const limit = isOwner
+    ? Infinity
+    : basePlanLimit === Infinity
+    ? Infinity
+    : basePlanLimit + addonNumbers;
   const atLimit = !isOwner && connections.length >= limit;
   const extraPriceMap: Record<string, number> = { starter: 499, pro: 399, growth: 299 };
   const extraPrice = extraPriceMap[plan];
@@ -112,6 +118,41 @@ function ConnectionsPage() {
 
   useEffect(() => {
     if (agencyId) load(agencyId);
+  }, [agencyId]);
+
+  // Fetch addon_numbers + subscribe to realtime changes
+  useEffect(() => {
+    if (!agencyId) return;
+    const fetchAddons = async () => {
+      const { data } = await supabase
+        .from("agencies")
+        .select("addon_numbers")
+        .eq("id", agencyId)
+        .single();
+      setAddonNumbers(Number((data as any)?.addon_numbers ?? 0));
+    };
+    fetchAddons();
+
+    const channel = supabase
+      .channel(`agency-addons-${agencyId}-${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "agencies",
+          filter: `id=eq.${agencyId}`,
+        },
+        (payload) => {
+          const next = (payload.new as any)?.addon_numbers;
+          if (next !== undefined) setAddonNumbers(Number(next ?? 0));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [agencyId]);
 
   const openModal = () => {
