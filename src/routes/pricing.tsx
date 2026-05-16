@@ -47,10 +47,12 @@ function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(true);
   const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
 
   const fetchPlan = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) { setLoading(false); return; }
+    setUserEmail(session.user.email ?? "");
     const { data: userRow } = await supabase.from("users").select("agency_id").eq("id", session.user.id).single();
     if (userRow?.agency_id) {
       setAgencyId(userRow.agency_id);
@@ -103,7 +105,8 @@ function PricingPage() {
               const isCurrent = !isOwner && p.key === plan;
               const isDowngrade = !isOwner && idx < currentIdx;
               const isUpgrade = !isOwner && idx > currentIdx;
-              const link = annual ? p.annualLink : p.monthlyLink;
+      const baseLink = annual ? p.annualLink : p.monthlyLink;
+      const link = baseLink && userEmail ? `${baseLink}?prefill[email]=${encodeURIComponent(userEmail)}` : baseLink;
               const priceLabel = annual ? p.annual : p.monthly;
               const priceSuffix = p.trialPlan ? " / 14 days" : p.agency ? "" : annual ? "/year" : "/month";
 
@@ -161,13 +164,14 @@ function PricingPage() {
             <p className="text-sm text-white/60 mt-2">Add extra WhatsApp numbers without changing your plan</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            {ADDONS.map((a) => {
+          {ADDONS.map((a) => {
               const highlight = !isOwner && a.plan === plan;
+              const addonLink = userEmail ? `${a.link}?prefill[email]=${encodeURIComponent(userEmail)}` : a.link;
               return (
                 <div key={a.plan} className="bg-[#0f1117] rounded-xl p-5 flex flex-col transition-all" style={{ border: `1px solid ${highlight ? a.accent : "rgba(255,255,255,0.07)"}` }}>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-white/80 mb-2">{a.name}</div>
                   <div className="text-2xl font-semibold text-white">{a.price}<span className="text-sm font-normal text-white/50">/number/month</span></div>
-                  <a href={a.link} target="_blank" rel="noopener noreferrer" className={`mt-5 h-10 w-full rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-90 ${isOwner ? "pointer-events-none opacity-50" : ""}`} style={{ backgroundColor: a.accent, color: "white" }}>Add number <ArrowUpRight className="h-4 w-4" /></a>
+                  <a href={addonLink} target="_blank" rel="noopener noreferrer" className={`mt-5 h-10 w-full rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-90 ${isOwner ? "pointer-events-none opacity-50" : ""}`} style={{ backgroundColor: a.accent, color: "white" }}>Add number <ArrowUpRight className="h-4 w-4" /></a>
                 </div>
               );
             })}
