@@ -42,20 +42,28 @@ export function PhoneProvider({ children }: { children: ReactNode }) {
       let list: ConnectionItem[] = [];
       const { data, error } = await supabase
         .from("connected_phone_numbers")
-        .select("id, label, phone_number")
+        .select("id, display_name, phone_number_id")
         .eq("agency_id", agencyId)
         .eq("is_active", true)
         .order("created_at", { ascending: true });
 
       if (!error && data) {
-        list = data as ConnectionItem[];
+        list = data.map((r: any) => ({
+          id: r.id,
+          label: r.display_name,
+          phone_number: r.phone_number_id,
+        }));
       } else {
         const { data: fallback } = await supabase
           .from("connected_phone_numbers")
-          .select("id, label, phone_number")
+          .select("id, display_name, phone_number_id")
           .eq("agency_id", agencyId)
           .order("created_at", { ascending: true });
-        list = (fallback ?? []) as ConnectionItem[];
+        list = (fallback ?? []).map((r: any) => ({
+          id: r.id,
+          label: r.display_name,
+          phone_number: r.phone_number_id,
+        }));
       }
 
       setConnections(list);
