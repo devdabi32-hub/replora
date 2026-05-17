@@ -35,7 +35,7 @@ function ContactsPage() {
         const { data, error } = await supabase
           .from("messages")
           .select("*")
-          .eq("phone_number_id", selectedId)
+          .eq("connection_id", selectedId)
           .order("timestamp", { ascending: false });
         if (!error) { setMessages((data ?? []) as Message[]); setLoading(false); return; }
       }
