@@ -45,7 +45,7 @@ export function PhoneProvider({ children }: { children: ReactNode }) {
         .select("id, display_name, phone_number_id")
         .eq("agency_id", agencyId)
         .eq("is_active", true)
-        .order("created_at", { ascending: true });
+        .order("connected_at", { ascending: true });
 
       if (!error && data) {
         list = data.map((r: any) => ({
@@ -58,7 +58,7 @@ export function PhoneProvider({ children }: { children: ReactNode }) {
           .from("connected_phone_numbers")
           .select("id, display_name, phone_number_id")
           .eq("agency_id", agencyId)
-          .order("created_at", { ascending: true });
+          .order("connected_at", { ascending: true });
         list = (fallback ?? []).map((r: any) => ({
           id: r.id,
           label: r.display_name,
