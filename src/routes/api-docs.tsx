@@ -569,6 +569,7 @@ function ConnectN8n() {
             ["direction", "inbound"],
             ["sender_type", "client"],
             ["timestamp", "={{ new Date().toISOString() }}"],
+            ["phone_number_id", "={{ $json.metadata.phone_number_id }}"],
           ]}
         />
       </Step>
@@ -592,6 +593,7 @@ function ConnectN8n() {
             ["direction", "outbound"],
             ["sender_type", "ai_agent"],
             ["timestamp", "={{ new Date().toISOString() }}"],
+            ["phone_number_id", "={{ $('WhatsApp Trigger').item.json.metadata.phone_number_id }}"],
           ]}
         />
       </Step>
