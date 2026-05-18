@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
@@ -36,6 +37,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/onboarding'
+    | '/partner'
     | '/pricing'
     | '/settings'
     | '/signup'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/onboarding'
+    | '/partner'
     | '/pricing'
     | '/settings'
     | '/signup'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/onboarding'
+    | '/partner'
     | '/pricing'
     | '/settings'
     | '/signup'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  PartnerRoute: typeof PartnerRoute
   PricingRoute: typeof PricingRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  PartnerRoute: PartnerRoute,
   PricingRoute: PricingRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
