@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
   Phone, Plus, X, Eye, EyeOff, Copy, Check,
-  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight,
+  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight, Pencil,
 } from "lucide-react";
 
 export const Route = createFileRoute("/connections")({
@@ -24,6 +24,7 @@ type Connection = {
   label: string;
   phone_number: string;
   api_key: string | null;
+  access_token: string | null;
   created_at: string;
   is_active: boolean;
 };
@@ -63,6 +64,11 @@ function ConnectionsPage() {
   const [deleting, setDeleting] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [addonNumbers, setAddonNumbers] = useState(0);
+  const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editAccessToken, setEditAccessToken] = useState("");
+  const [editTokenVisible, setEditTokenVisible] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const basePlanLimit = PLAN_LIMITS[plan] ?? 1;
   const limit = isOwner
@@ -98,7 +104,7 @@ function ConnectionsPage() {
   const load = async (aid: string) => {
     const { data: rows, error } = await supabase
       .from("connected_phone_numbers")
-      .select("id, display_name, phone_number_id, api_key, message_count, connected_at, is_active")
+      .select("id, display_name, phone_number_id, api_key, access_token, message_count, connected_at, is_active")
       .eq("agency_id", aid);
     console.log("agencyId:", aid);
     console.log("connections:", rows);
@@ -109,6 +115,7 @@ function ConnectionsPage() {
       label: r.display_name,
       phone_number: r.phone_number_id,
       api_key: r.api_key,
+      access_token: r.access_token,
       created_at: r.connected_at,
       is_active: r.is_active,
     }));
@@ -207,6 +214,20 @@ function ConnectionsPage() {
     setConfirmDelete(null);
     toast.success("Connection deleted");
     load(agencyId);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingConnection) return;
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("connected_phone_numbers")
+      .update({ display_name: editLabel.trim(), access_token: editAccessToken.trim() || null })
+      .eq("id", editingConnection.id);
+    setSavingEdit(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Connection updated");
+    setEditingConnection(null);
+    if (agencyId) load(agencyId);
   };
 
   const toggleVisible = (id: string) =>
@@ -339,6 +360,13 @@ function ConnectionsPage() {
                   <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#00c853]/15 text-[#00c853] border border-[#00c853]/30">
                     Active
                   </span>
+                  <button
+                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditTokenVisible(false); }}
+                    className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white border border-white/10 transition-colors"
+                    title="Edit connection"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
                   <button
                     onClick={() => setConfirmDelete(c)}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
@@ -508,6 +536,86 @@ function ConnectionsPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Connection Modal */}
+      {editingConnection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0f1117] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center shrink-0">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Edit Connection</h2>
+                  <p className="text-sm text-white/60 mt-0.5">{editingConnection.label}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingConnection(null)}
+                className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-white/80">Display Name</label>
+                <input
+                  value={editLabel}
+                  onChange={(e) => setEditLabel(e.target.value)}
+                  placeholder="e.g. Sharma Jewellers"
+                  className={`mt-1 ${inputClass}`}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-white/80">Meta API Access Token</label>
+                <div className="relative mt-1">
+                  <input
+                    type={editTokenVisible ? "text" : "password"}
+                    value={editAccessToken}
+                    onChange={(e) => setEditAccessToken(e.target.value)}
+                    placeholder="Enter your permanent Meta token..."
+                    className={`w-full h-11 px-3 pr-10 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditTokenVisible((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                  >
+                    {editTokenVisible ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/40 mt-1.5">
+                  Found in Meta Developer Dashboard → Your App → WhatsApp → API Setup
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditingConnection(null)}
+                disabled={savingEdit}
+                className="flex-1 h-11 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit}
+                className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingEdit ? "Saving…" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       )}
