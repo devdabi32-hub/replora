@@ -6,9 +6,11 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useUpgradeModal } from "@/components/UpgradeModal";
 import { usePhoneContext } from "@/contexts/PhoneContext";
+import { toast } from "sonner";
 import {
   Search, Phone, Video, MoreVertical, Smile, Paperclip, Send,
   CheckCheck, Star, Trash2, StickyNote, Lock, MessageCircle, X, ArrowLeft,
+  Bot, User as UserIcon, Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/inbox")({ component: Index });
@@ -86,6 +88,12 @@ function InboxPage() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Human Takeover state
+  const [convRow, setConvRow] = useState<{ id: string; phone_number: string; human_takeover: boolean; status?: string } | null>(null);
+  const [composerText, setComposerText] = useState("");
+  const [sending, setSending] = useState(false);
+  const humanTakeover = !!convRow?.human_takeover;
 
   const loadMessages = async () => {
     if (selectedId) {
@@ -256,6 +264,97 @@ function InboxPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selected, conversationMessages.length]);
 
+  // Fetch + subscribe to the selected conversation row for human_takeover
+  useEffect(() => {
+    setConvRow(null);
+    setComposerText("");
+    if (!selected) return;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        let query = supabase
+          .from("conversations")
+          .select("id, phone_number, human_takeover, status")
+          .eq("phone_number", selected);
+        if (selectedId) query = query.eq("connection_id", selectedId);
+        const { data } = await query.maybeSingle();
+        if (cancelled) return;
+        if (data) {
+          setConvRow(data as any);
+          channel = supabase
+            .channel(`conv-${(data as any).id}`)
+            .on(
+              "postgres_changes",
+              { event: "UPDATE", schema: "public", table: "conversations", filter: `id=eq.${(data as any).id}` },
+              (payload) => {
+                const next = payload.new as any;
+                setConvRow((prev) => (prev ? { ...prev, ...next } : next));
+              },
+            )
+            .subscribe();
+        }
+      } catch (e) {
+        // swallow — never crash the inbox
+        console.error("conversation fetch failed", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [selected, selectedId]);
+
+  const toggleHumanMode = async () => {
+    if (!convRow) {
+      toast.error("Conversation not found yet — please wait a moment");
+      return;
+    }
+    const next = !convRow.human_takeover;
+    setConvRow({ ...convRow, human_takeover: next });
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({ human_takeover: next })
+        .eq("id", convRow.id);
+      if (error) throw error;
+    } catch (e: any) {
+      setConvRow({ ...convRow, human_takeover: !next });
+      toast.error(e?.message ?? "Failed to toggle mode");
+    }
+  };
+
+  const sendHumanMessage = async () => {
+    const text = composerText.trim();
+    if (!text || sending || !selected) return;
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-message", {
+        body: {
+          connection_id: selectedId,
+          phone_number: selected,
+          message_text: text,
+        },
+      });
+      if (error || (data && (data as any).error)) {
+        const code = (data as any)?.error_code;
+        if (code === "NO_ACCESS_TOKEN") {
+          toast.error("Add your Meta API token in Connections → Edit to enable Human Takeover");
+        } else {
+          toast.error((data as any)?.error ?? error?.message ?? "Failed to send message");
+        }
+      } else {
+        setComposerText("");
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const selectedConv = allConversations.find((c) => c.phone_number === selected);
   const selectedContact = selected ? contacts[selected] : undefined;
   const effectiveCat = selectedConv ? (selectedConv.category ?? selectedConv.autoCategory) : null;
@@ -408,12 +507,30 @@ function InboxPage() {
                 <div className="text-[12px] text-[#8696A0]">{selectedConv.activeToday ? "online" : `last seen ${timeShort(new Date(selectedConv.last.timestamp))}`}</div>
               </div>
               <div className="flex items-center gap-1 text-[#AEBAC1]">
+                <button
+                  onClick={toggleHumanMode}
+                  title={humanTakeover ? "Switch to AI mode" : "Take over from AI"}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors ${
+                    humanTakeover
+                      ? "bg-[#0084ff] text-white border-[#0084ff]"
+                      : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
+                  }`}
+                >
+                  {humanTakeover ? <UserIcon className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                  {humanTakeover ? "Human Mode" : "AI Mode"}
+                </button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><Search className="h-5 w-5" /></button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><Phone className="h-5 w-5" /></button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><Video className="h-5 w-5" /></button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><MoreVertical className="h-5 w-5" /></button>
               </div>
             </div>
+
+            {humanTakeover && (
+              <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-300 text-[12px] font-medium flex-shrink-0">
+                🟡 Human mode active — AI replies are paused for this conversation
+              </div>
+            )}
 
             {/* Toolbar */}
             <div className="px-4 py-2 bg-[#1F2A30] border-b border-black/30 flex items-center gap-2 flex-wrap flex-shrink-0">
@@ -496,7 +613,6 @@ function InboxPage() {
                       )}
                       <div className={`flex ${isOut ? "justify-end" : "justify-start"} mb-1`}>
                         <div className={`max-w-[65%] flex flex-col ${isOut ? "items-end" : "items-start"}`}>
-                          {isOut && <span className="text-[10px] font-semibold mb-0.5 px-2 text-[#00A884]">AI Agent</span>}
                           <div className={`relative px-3 py-1.5 text-[14px] shadow-sm ${isOut ? "bg-[#005C4B] text-[#E9EDEF] rounded-lg rounded-tr-none" : "bg-[#202C33] text-[#E9EDEF] rounded-lg rounded-tl-none"
                             }`}>
                             <div className="whitespace-pre-wrap break-words leading-snug pr-14">{m.message_text}</div>
@@ -505,6 +621,11 @@ function InboxPage() {
                               {isOut && <CheckCheck className="h-3 w-3 text-[#53BDEB]" />}
                             </div>
                           </div>
+                          {isOut && (
+                            <span className="text-[10px] mt-0.5 px-2 text-[#8696A0]">
+                              {m.sender_type === "human_agent" ? "Agent" : "AI"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -562,6 +683,30 @@ function InboxPage() {
                   className="w-full px-4 py-3 rounded-lg bg-[#0084ff]/10 hover:bg-[#0084ff]/15 border border-[#0084ff]/20 text-[#0084ff] text-sm font-medium text-center transition-colors"
                 >
                   Upgrade to receive messages →
+                </button>
+              </div>
+            ) : humanTakeover ? (
+              <div className="px-4 py-3 bg-[#0B141A] border-t border-black/40 flex items-end gap-2 flex-shrink-0">
+                <textarea
+                  value={composerText}
+                  onChange={(e) => setComposerText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendHumanMessage();
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  rows={1}
+                  style={{ maxHeight: "6.5rem" }}
+                  className="flex-1 resize-none bg-[#2A3942] text-[#E9EDEF] placeholder:text-[#8696A0] text-[14px] rounded-lg px-3 py-2.5 focus:outline-none"
+                />
+                <button
+                  onClick={sendHumanMessage}
+                  disabled={!composerText.trim() || sending}
+                  className="p-3 bg-[#0084ff] hover:bg-[#0084ff]/90 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
             ) : (
