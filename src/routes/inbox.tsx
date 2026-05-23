@@ -35,16 +35,17 @@ type Conversation = {
   isImportant: boolean;
   notes: Note[];
   lastInboundAt: Date | null;
+  assignedTo?: string | null;
 };
 
 const CAT: Record<Category, { label: string; emoji: string; cls: string; activeCls: string; dot: string }> = {
-  hot:  { label: "Hot",  emoji: "🔥", cls: "bg-red-500/15 text-red-300 border-red-500/30",       activeCls: "bg-red-500 text-white border-red-500",       dot: "bg-red-500" },
-  warm: { label: "Warm", emoji: "🟡", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30", activeCls: "bg-amber-500 text-white border-amber-500",   dot: "bg-amber-500" },
-  cold: { label: "Cold", emoji: "🔵", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30",       activeCls: "bg-sky-500 text-white border-sky-500",       dot: "bg-sky-500" },
+  hot: { label: "Hot", emoji: "🔥", cls: "bg-red-500/15 text-red-300 border-red-500/30", activeCls: "bg-red-500 text-white border-red-500", dot: "bg-red-500" },
+  warm: { label: "Warm", emoji: "🟡", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30", activeCls: "bg-amber-500 text-white border-amber-500", dot: "bg-amber-500" },
+  cold: { label: "Cold", emoji: "🔵", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30", activeCls: "bg-sky-500 text-white border-sky-500", dot: "bg-sky-500" },
 };
 
 function avatarColor(p: string) {
-  const colors = ["from-blue-500 to-indigo-600","from-emerald-500 to-teal-600","from-purple-500 to-pink-600","from-orange-500 to-red-600","from-cyan-500 to-blue-600","from-rose-500 to-pink-600","from-amber-500 to-orange-600"];
+  const colors = ["from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600", "from-purple-500 to-pink-600", "from-orange-500 to-red-600", "from-cyan-500 to-blue-600", "from-rose-500 to-pink-600", "from-amber-500 to-orange-600"];
   let h = 0; for (const c of p) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return colors[h % colors.length];
 }
@@ -77,6 +78,9 @@ function InboxPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [assignFilter, setAssignFilter] = useState<"all" | "mine" | "unassigned">("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<{ id: string; full_name: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -111,6 +115,17 @@ function InboxPage() {
   };
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUserId(data.user.id);
+        supabase.from("users").select("agency_id").eq("id", data.user.id).maybeSingle().then(({ data: u }) => {
+          if (u?.agency_id) {
+            supabase.from("users").select("id, full_name").eq("agency_id", u.agency_id)
+              .then(({ data: tm }) => setTeamMembers(tm ?? []));
+          }
+        });
+      }
+    });
     loadMessages(); loadContacts();
     const ch = supabase.channel("inbox-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, loadMessages)
@@ -201,9 +216,14 @@ function InboxPage() {
         if (filter === "important") return c.isImportant;
         return (c.category ?? c.autoCategory) === filter;
       })
+      .filter((c) => {
+        if (assignFilter === "mine") return c.assignedTo === currentUserId;
+        if (assignFilter === "unassigned") return !c.assignedTo;
+        return true;
+      })
       .filter((c) => c.phone_number.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0));
-  }, [allConversations, filter, search]);
+  }, [allConversations, filter, assignFilter, currentUserId, search]);
 
   const counts = useMemo(() => {
     const c = { all: allConversations.length, important: 0, hot: 0, warm: 0, cold: 0 };
@@ -225,7 +245,7 @@ function InboxPage() {
     if (!selected) return;
     const unread = messages.filter((m) => m.phone_number === selected && m.direction === "inbound" && m.is_read === false);
     if (!unread.length) return;
-    supabase.from("messages").update({ is_read: true }).in("id", unread.map((u) => u.id)).then(() => {});
+    supabase.from("messages").update({ is_read: true }).in("id", unread.map((u) => u.id)).then(() => { });
   }, [selected, messages]);
 
   useEffect(() => {
@@ -274,6 +294,22 @@ function InboxPage() {
           </div>
         </div>
 
+        {/* Assignment filter tabs */}
+        <div className="px-3 pb-1 flex items-center gap-1.5">
+          {(["all", "mine", "unassigned"] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => setAssignFilter(a)}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium border transition-all flex-shrink-0 ${assignFilter === a
+                ? "bg-[#0084ff]/20 text-[#0084ff] border-[#0084ff]/40"
+                : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
+                }`}
+            >
+              {a === "all" ? "All Chats" : a === "mine" ? "My Chats" : "Unassigned"}
+            </button>
+          ))}
+        </div>
+
         {/* Filter tabs */}
         <div className="px-3 pb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
           {tabs.map((t) => {
@@ -281,9 +317,8 @@ function InboxPage() {
             const count = counts[t.key];
             return (
               <button key={t.key} onClick={() => setFilter(t.key)}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium border transition-all flex-shrink-0 ${
-                  isActive ? "bg-[#00A884]/20 text-[#00A884] border-[#00A884]/40" : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
-                }`}>
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium border transition-all flex-shrink-0 ${isActive ? "bg-[#00A884]/20 text-[#00A884] border-[#00A884]/40" : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
+                  }`}>
                 {t.icon && <span>{t.icon}</span>}
                 <span>{t.label}</span>
                 <span className="text-[10px] opacity-70">{count}</span>
@@ -306,9 +341,8 @@ function InboxPage() {
             return (
               <div key={c.phone_number}
                 onClick={() => setSelected(c.phone_number)}
-                className={`group cursor-pointer flex items-center gap-3 pl-3 pr-3 py-3 border-b border-white/[0.04] transition-colors ${
-                  isSel ? "bg-[#2A3942]" : "hover:bg-[#202C33]"
-                }`}>
+                className={`group cursor-pointer flex items-center gap-3 pl-3 pr-3 py-3 border-b border-white/[0.04] transition-colors ${isSel ? "bg-[#2A3942]" : "hover:bg-[#202C33]"
+                  }`}>
                 <div className="relative flex-shrink-0">
                   <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${avatarColor(c.phone_number)} text-white flex items-center justify-center text-lg font-semibold`}>
                     {initial}
@@ -384,21 +418,47 @@ function InboxPage() {
             {/* Toolbar */}
             <div className="px-4 py-2 bg-[#1F2A30] border-b border-black/30 flex items-center gap-2 flex-wrap flex-shrink-0">
               <button onClick={() => toggleStar(selected)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${
-                  selectedConv.isImportant ? "bg-amber-400/15 text-amber-300 border-amber-400/40" : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
-                }`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${selectedConv.isImportant ? "bg-amber-400/15 text-amber-300 border-amber-400/40" : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
+                  }`}>
                 <Star className="h-3.5 w-3.5" fill={selectedConv.isImportant ? "currentColor" : "none"} />
                 {selectedConv.isImportant ? "Important" : "Mark important"}
               </button>
+              {/* Assign to agent */}
+              {teamMembers.length > 1 && (
+                <>
+                  <div className="h-5 w-px bg-white/10" />
+                  <span className="text-[11px] text-[#8696A0] font-medium uppercase tracking-wider">Assign:</span>
+                  <select
+                    value={selectedConv?.assignedTo ?? ""}
+                    onChange={async (e) => {
+                      const val = e.target.value || null;
+                      await supabase.from("conversations")
+                        .update({ assigned_to: val })
+                        .eq("phone_number", selected);
+                      setMessages((prev) => prev.map((m) =>
+                        m.phone_number === selected ? { ...m } : m
+                      ));
+                    }}
+                    className="text-[12px] rounded-full px-2 py-1 bg-[#2A3942] text-[#AEBAC1] border border-white/10 focus:outline-none focus:border-[#0084ff]/50"
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((tm) => (
+                      <option key={tm.id} value={tm.id}>
+                        {tm.full_name ?? tm.id.slice(0, 8)}
+                        {tm.id === currentUserId ? " (me)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
               <div className="h-5 w-px bg-white/10" />
               <span className="text-[11px] text-[#8696A0] font-medium uppercase tracking-wider">Tag:</span>
-              {(["hot","warm","cold"] as Category[]).map((k) => {
+              {(["hot", "warm", "cold"] as Category[]).map((k) => {
                 const meta = CAT[k]; const active = effectiveCat === k && selectedConv.category === k;
                 return (
                   <button key={k} onClick={() => setTag(selected, active ? null : k)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${
-                      active ? meta.activeCls : meta.cls + " hover:opacity-80"
-                    }`}>
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${active ? meta.activeCls : meta.cls + " hover:opacity-80"
+                      }`}>
                     <span>{meta.emoji}</span>{meta.label}
                   </button>
                 );
@@ -437,9 +497,8 @@ function InboxPage() {
                       <div className={`flex ${isOut ? "justify-end" : "justify-start"} mb-1`}>
                         <div className={`max-w-[65%] flex flex-col ${isOut ? "items-end" : "items-start"}`}>
                           {isOut && <span className="text-[10px] font-semibold mb-0.5 px-2 text-[#00A884]">AI Agent</span>}
-                          <div className={`relative px-3 py-1.5 text-[14px] shadow-sm ${
-                            isOut ? "bg-[#005C4B] text-[#E9EDEF] rounded-lg rounded-tr-none" : "bg-[#202C33] text-[#E9EDEF] rounded-lg rounded-tl-none"
-                          }`}>
+                          <div className={`relative px-3 py-1.5 text-[14px] shadow-sm ${isOut ? "bg-[#005C4B] text-[#E9EDEF] rounded-lg rounded-tr-none" : "bg-[#202C33] text-[#E9EDEF] rounded-lg rounded-tl-none"
+                            }`}>
                             <div className="whitespace-pre-wrap break-words leading-snug pr-14">{m.message_text}</div>
                             <div className="float-right -mb-1 ml-2 mt-1 flex items-center gap-1 text-[10px] text-[#8696A0]">
                               <span>{format(new Date(m.timestamp), "HH:mm")}</span>
@@ -506,17 +565,17 @@ function InboxPage() {
                 </button>
               </div>
             ) : (
-            <div className="px-4 py-3 bg-[#202C33] flex items-center gap-2 flex-shrink-0">
-              <button className="p-2 text-[#8696A0]" disabled><Smile className="h-5 w-5" /></button>
-              <button className="p-2 text-[#8696A0]" disabled><Paperclip className="h-5 w-5" /></button>
-              <div className="flex-1 px-4 py-2.5 rounded-lg bg-[#2A3942] text-[#8696A0] text-[14px] flex items-center gap-2">
-                <Lock className="h-3.5 w-3.5 text-[#00A884]" />
-                Monitoring mode — replies sent by AI agent
+              <div className="px-4 py-3 bg-[#202C33] flex items-center gap-2 flex-shrink-0">
+                <button className="p-2 text-[#8696A0]" disabled><Smile className="h-5 w-5" /></button>
+                <button className="p-2 text-[#8696A0]" disabled><Paperclip className="h-5 w-5" /></button>
+                <div className="flex-1 px-4 py-2.5 rounded-lg bg-[#2A3942] text-[#8696A0] text-[14px] flex items-center gap-2">
+                  <Lock className="h-3.5 w-3.5 text-[#00A884]" />
+                  Monitoring mode — replies sent by AI agent
+                </div>
+                <button className="p-2.5 bg-[#00A884] text-white rounded-full opacity-50 cursor-not-allowed" disabled>
+                  <Send className="h-4 w-4" />
+                </button>
               </div>
-              <button className="p-2.5 bg-[#00A884] text-white rounded-full opacity-50 cursor-not-allowed" disabled>
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
             )}
           </>
         ) : (
