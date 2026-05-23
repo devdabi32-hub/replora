@@ -99,7 +99,7 @@ function ConnectionsPage() {
   const load = async (aid: string) => {
     const { data: rows, error } = await supabase
       .from("connected_phone_numbers")
-      .select("id, display_name, phone_number_id, api_key, message_count, connected_at, is_active")
+      .select("id, display_name, phone_number_id, api_key, access_token, message_count, connected_at, is_active")
       .eq("agency_id", aid);
     console.log("agencyId:", aid);
     console.log("connections:", rows);
@@ -110,6 +110,7 @@ function ConnectionsPage() {
       label: r.display_name,
       phone_number: r.phone_number_id,
       api_key: r.api_key,
+      access_token: r.access_token,
       created_at: r.connected_at,
       is_active: r.is_active,
     }));
