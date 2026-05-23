@@ -216,6 +216,20 @@ function ConnectionsPage() {
     load(agencyId);
   };
 
+  const handleSaveEdit = async () => {
+    if (!editingConnection) return;
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("connected_phone_numbers")
+      .update({ display_name: editLabel.trim(), access_token: editAccessToken.trim() || null })
+      .eq("id", editingConnection.id);
+    setSavingEdit(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Connection updated");
+    setEditingConnection(null);
+    if (agencyId) load(agencyId);
+  };
+
   const toggleVisible = (id: string) =>
     setVisible((v) => ({ ...v, [id]: !v[id] }));
 
