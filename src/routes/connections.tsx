@@ -24,6 +24,7 @@ type Connection = {
   label: string;
   phone_number: string;
   api_key: string | null;
+  access_token: string | null;
   created_at: string;
   is_active: boolean;
 };
