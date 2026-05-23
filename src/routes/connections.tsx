@@ -361,6 +361,13 @@ function ConnectionsPage() {
                     Active
                   </span>
                   <button
+                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditTokenVisible(false); }}
+                    className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white border border-white/10 transition-colors"
+                    title="Edit connection"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => setConfirmDelete(c)}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
                     title="Delete connection"
