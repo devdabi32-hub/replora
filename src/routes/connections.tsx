@@ -64,6 +64,11 @@ function ConnectionsPage() {
   const [deleting, setDeleting] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [addonNumbers, setAddonNumbers] = useState(0);
+  const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editAccessToken, setEditAccessToken] = useState("");
+  const [editTokenVisible, setEditTokenVisible] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const basePlanLimit = PLAN_LIMITS[plan] ?? 1;
   const limit = isOwner
