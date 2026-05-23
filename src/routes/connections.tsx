@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
   Phone, Plus, X, Eye, EyeOff, Copy, Check,
-  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight,
+  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight, Pencil,
 } from "lucide-react";
 
 export const Route = createFileRoute("/connections")({
