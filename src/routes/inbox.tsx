@@ -331,6 +331,7 @@ function InboxPage() {
     if (!text || sending || !selected) return;
     setSending(true);
     try {
+      console.log('[send-message] invoking with:', { connection_id: selectedId, phone_number: selected });
       const { data, error } = await supabase.functions.invoke("send-message", {
         body: {
           connection_id: selectedId,
