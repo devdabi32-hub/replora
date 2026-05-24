@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, Inbox, Users, BookOpen, Plug,
-  Headphones, LogOut, Trash2, Tag,
+  Headphones, LogOut, Trash2, Tag, KanbanSquare,
   Settings as SettingsIcon, UserPlus, FileDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -22,7 +22,8 @@ const baseNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
   { to: "/contacts", label: "Contacts", icon: Users },
-  { to: "/team", label: "Team", icon: UserPlus },
+  { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
+  { to: "/team", label: "Team", icon: UserPlus }, src / routes / dashboard.tsx
   { to: "/api-docs", label: "API Docs", icon: BookOpen },
   { to: "/connections", label: "Connections", icon: Plug },
 ];

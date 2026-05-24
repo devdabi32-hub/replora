@@ -17,7 +17,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function avatarColor(phone: string) {
-  const colors = ["from-blue-500 to-indigo-600","from-emerald-500 to-teal-600","from-purple-500 to-pink-600","from-orange-500 to-red-600","from-cyan-500 to-blue-600"];
+  const colors = ["from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600", "from-purple-500 to-pink-600", "from-orange-500 to-red-600", "from-cyan-500 to-blue-600"];
   let h = 0;
   for (const c of phone) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return colors[h % colors.length];
@@ -27,6 +27,8 @@ function DashboardPage() {
   const { selectedId } = usePhoneContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pipelineValue, setPipelineValue] = useState("₹0");
+  const [pipelineLoading, setPipelineLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -44,6 +46,22 @@ function DashboardPage() {
     };
     load();
   }, [selectedId]);
+
+  useEffect(() => {
+    supabase
+      .from("deals")
+      .select("value")
+      .then(({ data }) => {
+        const total = (data ?? []).reduce(
+          (s: number, d: { value: number }) => s + (Number(d.value) || 0),
+          0,
+        );
+        if (total >= 100000) setPipelineValue(`₹${(total / 100000).toFixed(1)}L`);
+        else if (total >= 1000) setPipelineValue(`₹${(total / 1000).toFixed(1)}K`);
+        else setPipelineValue(`₹${total.toLocaleString("en-IN")}`);
+        setPipelineLoading(false);
+      });
+  }, []);
 
   const stats = useMemo(() => {
     const inbound = messages.filter((m) => m.direction === "inbound").length;
@@ -152,11 +170,12 @@ function DashboardPage() {
         <p className="text-sm text-white/60 mt-1">Real-time overview of your WhatsApp AI agent performance</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <MetricCard label="Total Conversations" value={stats.conversations.toLocaleString()} icon={Users} iconBg="bg-[#0084ff]/15" iconColor="text-[#0084ff]" change={stats.change} loading={loading} />
         <MetricCard label="Total Messages" value={stats.total.toLocaleString()} icon={MessageSquare} iconBg="bg-purple-500/15" iconColor="text-purple-300" change={stats.change} loading={loading} />
         <MetricCard label="AI Response Rate" value={`${stats.aiRate}%`} icon={Bot} iconBg="bg-[#00c853]/15" iconColor="text-[#00c853]" change={5} loading={loading} />
         <MetricCard label="Avg Response Time" value={fmtResponse(stats.avgResponse)} icon={Clock} iconBg="bg-orange-500/15" iconColor="text-orange-300" change={-12} loading={loading} inverted />
+        <MetricCard label="Pipeline Value" value={pipelineValue} icon={TrendingUp} iconBg="bg-[#00c853]/15" iconColor="text-[#00c853]" change={0} loading={pipelineLoading} />
       </div>
 
       <div className="bg-[#0f1117] border border-white/10 rounded-2xl p-6 mb-6">
@@ -245,9 +264,8 @@ function MetricCard({
         <div className={`h-10 w-10 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center`}>
           <Icon className="h-5 w-5" />
         </div>
-        <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
-          positive ? "bg-[#00c853]/15 text-[#00c853]" : "bg-red-500/15 text-red-300"
-        }`}>
+        <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${positive ? "bg-[#00c853]/15 text-[#00c853]" : "bg-red-500/15 text-red-300"
+          }`}>
           <TrendIcon className="h-3 w-3" />
           {Math.abs(change)}%
         </div>
