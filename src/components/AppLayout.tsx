@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, Inbox, Users, BookOpen, Plug,
   Headphones, LogOut, Trash2, Tag, KanbanSquare,
-  Settings as SettingsIcon, UserPlus, FileDown,
+  Settings as SettingsIcon, UserPlus, FileDown, Megaphone,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { LogoMark } from "@/components/Logo";
@@ -23,6 +23,7 @@ const baseNav: NavItem[] = [
   { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
+  { to: "/broadcasts", label: "Broadcasts", icon: Megaphone },
   { to: "/team", label: "Team", icon: UserPlus },
   { to: "/api-docs", label: "API Docs", icon: BookOpen },
   { to: "/connections", label: "Connections", icon: Plug },
