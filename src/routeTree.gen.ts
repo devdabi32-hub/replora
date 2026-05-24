@@ -13,6 +13,7 @@ import { Route as TeamRouteImport } from './routes/team'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
@@ -43,6 +44,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartnerRoute = PartnerRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pipeline': typeof PipelineRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pipeline': typeof PipelineRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pipeline': typeof PipelineRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/partner'
+    | '/pipeline'
     | '/pricing'
     | '/settings'
     | '/signup'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/partner'
+    | '/pipeline'
     | '/pricing'
     | '/settings'
     | '/signup'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/partner'
+    | '/pipeline'
     | '/pricing'
     | '/settings'
     | '/signup'
@@ -219,6 +231,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRoute
+  PipelineRoute: typeof PipelineRoute
   PricingRoute: typeof PricingRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/partner': {
@@ -347,6 +367,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRoute,
+  PipelineRoute: PipelineRoute,
   PricingRoute: PricingRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
