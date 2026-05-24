@@ -23,7 +23,7 @@ const baseNav: NavItem[] = [
   { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
-  { to: "/team", label: "Team", icon: UserPlus }, src / routes / dashboard.tsx
+  { to: "/team", label: "Team", icon: UserPlus },
   { to: "/api-docs", label: "API Docs", icon: BookOpen },
   { to: "/connections", label: "Connections", icon: Plug },
 ];
