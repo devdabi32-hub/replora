@@ -70,10 +70,10 @@ const SUPABASE_URL =
     (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
     "https://xloppafivbvsljfxtjwh.supabase.co";
 
-const STATUS_CONFIG: Record
-BroadcastStatus,
+const STATUS_CONFIG: Record<
+    BroadcastStatus,
     { label: string; color: string; spin?: boolean }
-    > = {
+> = {
     draft: { label: "Draft", color: "text-white/50 bg-white/[0.07]" },
     sending: { label: "Sending…", color: "text-yellow-400 bg-yellow-400/10", spin: true },
     sent: { label: "Sent", color: "text-[#00c853] bg-[#00c853]/10" },
