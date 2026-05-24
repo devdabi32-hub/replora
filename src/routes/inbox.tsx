@@ -331,6 +331,7 @@ function InboxPage() {
     if (!text || sending || !selected) return;
     setSending(true);
     try {
+      console.log('[send-message] invoking with:', { connection_id: selectedId, phone_number: selected });
       const { data, error } = await supabase.functions.invoke("send-message", {
         body: {
           connection_id: selectedId,
@@ -599,7 +600,7 @@ function InboxPage() {
               <div className="flex-1 overflow-y-auto px-4 md:px-12 py-4"
                 style={{ backgroundColor: "#0B141A", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M40 40c0-22 18-40 40-40v80C58 80 40 62 40 40zM0 40c0 22 18 40 40 40V0C18 0 0 18 0 40z'/%3E%3C/g%3E%3C/svg%3E\")" }}>
                 {conversationMessages.map((m, idx) => {
-                  const isOut = m.sender_type === "ai_agent" || m.sender_type === "human_agent";
+                  const isOut = m.direction === "outbound" || m.sender_type === "ai_agent" || m.sender_type === "human_agent";
                   const prev = conversationMessages[idx - 1];
                   const showDay = !prev || dayLabel(new Date(prev.timestamp)) !== dayLabel(new Date(m.timestamp));
                   return (
