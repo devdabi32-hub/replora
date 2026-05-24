@@ -646,7 +646,7 @@ function BroadcastsPage() {
                                 <AlertCircle className="h-4 w-4 text-[#0084ff]/60 mt-0.5 shrink-0" />
                                 <p className="text-[11px] text-white/35 leading-relaxed">
                                     Only Meta-approved templates can be broadcast. Approve yours at{" "}
-
+                                    <a
                                     href="https://business.facebook.com/wa/manage/message-templates/"
                                     target="_blank"
                                     rel="noopener noreferrer"
