@@ -70,10 +70,10 @@ const SUPABASE_URL =
     (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
     "https://xloppafivbvsljfxtjwh.supabase.co";
 
-const STATUS_CONFIG: Record
-BroadcastStatus,
+const STATUS_CONFIG: Record<
+    BroadcastStatus,
     { label: string; color: string; spin?: boolean }
-    > = {
+> = {
     draft: { label: "Draft", color: "text-white/50 bg-white/[0.07]" },
     sending: { label: "Sending…", color: "text-yellow-400 bg-yellow-400/10", spin: true },
     sent: { label: "Sent", color: "text-[#00c853] bg-[#00c853]/10" },
@@ -646,7 +646,7 @@ function BroadcastsPage() {
                                 <AlertCircle className="h-4 w-4 text-[#0084ff]/60 mt-0.5 shrink-0" />
                                 <p className="text-[11px] text-white/35 leading-relaxed">
                                     Only Meta-approved templates can be broadcast. Approve yours at{" "}
-
+                                    <a
                                     href="https://business.facebook.com/wa/manage/message-templates/"
                                     target="_blank"
                                     rel="noopener noreferrer"

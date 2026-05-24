@@ -21,6 +21,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ConnectionsRouteImport } from './routes/connections'
+import { Route as BroadcastsRouteImport } from './routes/broadcasts'
 import { Route as ApiDocsRouteImport } from './routes/api-docs'
 import { Route as ApiConfigurationRouteImport } from './routes/api-configuration'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -86,6 +87,11 @@ const ConnectionsRoute = ConnectionsRouteImport.update({
   path: '/connections',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BroadcastsRoute = BroadcastsRouteImport.update({
+  id: '/broadcasts',
+  path: '/broadcasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDocsRoute = ApiDocsRouteImport.update({
   id: '/api-docs',
   path: '/api-docs',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/broadcasts'
     | '/connections'
     | '/contacts'
     | '/dashboard'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/broadcasts'
     | '/connections'
     | '/contacts'
     | '/dashboard'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/broadcasts'
     | '/connections'
     | '/contacts'
     | '/dashboard'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ApiConfigurationRoute: typeof ApiConfigurationRoute
   ApiDocsRoute: typeof ApiDocsRoute
+  BroadcastsRoute: typeof BroadcastsRoute
   ConnectionsRoute: typeof ConnectionsRoute
   ContactsRoute: typeof ContactsRoute
   DashboardRoute: typeof DashboardRoute
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/broadcasts': {
+      id: '/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/broadcasts'
+      preLoaderRoute: typeof BroadcastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api-docs': {
       id: '/api-docs'
       path: '/api-docs'
@@ -360,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ApiConfigurationRoute: ApiConfigurationRoute,
   ApiDocsRoute: ApiDocsRoute,
+  BroadcastsRoute: BroadcastsRoute,
   ConnectionsRoute: ConnectionsRoute,
   ContactsRoute: ContactsRoute,
   DashboardRoute: DashboardRoute,
