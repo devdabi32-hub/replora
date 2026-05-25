@@ -56,6 +56,7 @@ function ConnectionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newPhoneId, setNewPhoneId] = useState("");
+  const [newWabaId, setNewWabaId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
@@ -68,6 +69,7 @@ function ConnectionsPage() {
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editAccessToken, setEditAccessToken] = useState("");
+  const [editWabaId, setEditWabaId] = useState("");
   const [editTokenVisible, setEditTokenVisible] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -105,7 +107,7 @@ function ConnectionsPage() {
   const load = async (aid: string) => {
     const { data: rows, error } = await supabase
       .from("connected_phone_numbers")
-      .select("id, display_name, phone_number_id, api_key, access_token, message_count, connected_at, is_active")
+      .select("id, display_name, phone_number_id, api_key, access_token, waba_id, message_count, connected_at, is_active")
       .eq("agency_id", aid);
     console.log("agencyId:", aid);
     console.log("connections:", rows);
@@ -117,6 +119,7 @@ function ConnectionsPage() {
       phone_number: r.phone_number_id,
       api_key: r.api_key,
       access_token: r.access_token,
+      waba_id: r.waba_id ?? null,
       created_at: r.connected_at,
       is_active: r.is_active,
     }));
@@ -168,6 +171,7 @@ function ConnectionsPage() {
     setNewApiKey(null);
     setNewLabel("");
     setNewPhoneId("");
+    setNewWabaId("");
     setShowModal(true);
   };
 
@@ -187,6 +191,7 @@ function ConnectionsPage() {
         agency_id: userRow!.agency_id,
         phone_number_id: newPhoneId.trim(),
         display_name: newLabel.trim(),
+        waba_id: newWabaId.trim() || null,
         is_active: true,
       })
       .select()
@@ -222,7 +227,11 @@ function ConnectionsPage() {
     setSavingEdit(true);
     const { error } = await supabase
       .from("connected_phone_numbers")
-      .update({ display_name: editLabel.trim(), access_token: editAccessToken.trim() || null })
+      .update({
+        display_name: editLabel.trim(),
+        access_token: editAccessToken.trim() || null,
+        waba_id: editWabaId.trim() || null,
+      })
       .eq("id", editingConnection.id);
     setSavingEdit(false);
     if (error) { toast.error(error.message); return; }
