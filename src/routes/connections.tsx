@@ -57,6 +57,8 @@ function ConnectionsPage() {
   const [newLabel, setNewLabel] = useState("");
   const [newPhoneId, setNewPhoneId] = useState("");
   const [newWabaId, setNewWabaId] = useState("");
+  const [newAccessToken, setNewAccessToken] = useState("");
+  const [newTokenVisible, setNewTokenVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
@@ -77,8 +79,8 @@ function ConnectionsPage() {
   const limit = isOwner
     ? Infinity
     : basePlanLimit === Infinity
-    ? Infinity
-    : basePlanLimit + addonNumbers;
+      ? Infinity
+      : basePlanLimit + addonNumbers;
   const atLimit = !isOwner && connections.length >= limit;
   const extraPriceMap: Record<string, number> = { starter: 499, pro: 399, growth: 299 };
   const extraPrice = extraPriceMap[plan];
@@ -172,6 +174,8 @@ function ConnectionsPage() {
     setNewLabel("");
     setNewPhoneId("");
     setNewWabaId("");
+    setNewAccessToken("");
+    setNewTokenVisible(false);
     setShowModal(true);
   };
 
@@ -192,6 +196,7 @@ function ConnectionsPage() {
         phone_number_id: newPhoneId.trim(),
         display_name: newLabel.trim(),
         waba_id: newWabaId.trim() || null,
+        access_token: newAccessToken.trim() || null,
         is_active: true,
       })
       .select()
@@ -302,13 +307,12 @@ function ConnectionsPage() {
         {limit !== Infinity && (
           <div className="h-2 rounded-full bg-white/10 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${
-                barPercent >= 100
+              className={`h-full rounded-full transition-all ${barPercent >= 100
                   ? "bg-red-500"
                   : barPercent >= 80
-                  ? "bg-amber-400"
-                  : "bg-[#0084ff]"
-              }`}
+                    ? "bg-amber-400"
+                    : "bg-[#0084ff]"
+                }`}
               style={{ width: `${barPercent}%` }}
             />
           </div>
@@ -539,6 +543,31 @@ function ConnectionsPage() {
                       Found in Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
                     </p>
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-white/80">Meta Permanent Access Token</label>
+                    <div className="relative mt-1">
+                      <input
+                        type={newTokenVisible ? "text" : "password"}
+                        value={newAccessToken}
+                        onChange={(e) => setNewAccessToken(e.target.value)}
+                        placeholder="EAAxxxxxxxxxxxxxxxx..."
+                        className="w-full h-11 px-3 pr-10 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewTokenVisible((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                      >
+                        {newTokenVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 mt-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-300 mt-0.5 shrink-0" />
+                      <p className="text-[11px] text-amber-100">
+                        Use a System User permanent token — never expires. Required for Template Builder and Human Takeover.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 mt-6">
@@ -712,16 +741,16 @@ function LimitReachedModal({ plan, onClose }: { plan: string; onClose: () => voi
 
   const extraHref = extraPrice
     ? `https://wa.me/918989568529?text=${encodeURIComponent(
-        `Hi, I want to add an extra WhatsApp number to my ${planLabel} plan on Replora for ₹${extraPrice}/month`,
-      )}`
+      `Hi, I want to add an extra WhatsApp number to my ${planLabel} plan on Replora for ₹${extraPrice}/month`,
+    )}`
     : `https://wa.me/918989568529?text=${encodeURIComponent(
-        `Hi, I want to add extra WhatsApp numbers on my Agency plan on Replora`,
-      )}`;
+      `Hi, I want to add extra WhatsApp numbers on my Agency plan on Replora`,
+    )}`;
 
   const upgradeHref = upgrade
     ? `https://wa.me/918989568529?text=${encodeURIComponent(
-        `Hi, I want to upgrade to ${upgrade.next} plan on Replora`,
-      )}`
+      `Hi, I want to upgrade to ${upgrade.next} plan on Replora`,
+    )}`
     : null;
 
   return (
