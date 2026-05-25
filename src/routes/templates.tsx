@@ -149,8 +149,7 @@ function TemplatesPage() {
     });
     setSyncing(false);
     if (error) { toast.error(error.message || "Sync failed"); return; }
-    const count = (data as any)?.count ?? (data as any)?.synced ?? "";
-    toast.success(`Synced ${count} templates from Meta`);
+    toast.success((data as any)?.message ?? "Templates synced from Meta");
     loadTemplates();
   };
 
@@ -158,7 +157,7 @@ function TemplatesPage() {
     if (!confirmDelete) return;
     setDeleting(true);
     const { error } = await supabase.functions.invoke("template-manager", {
-      body: { action: "delete", connection_id: confirmDelete.connection_id, template_id: confirmDelete.id, name: confirmDelete.name },
+      body: { action: "delete", connection_id: confirmDelete.connection_id, template_id: confirmDelete.id, template_name: confirmDelete.name },
     });
     setDeleting(false);
     if (error) { toast.error(error.message || "Delete failed"); return; }
@@ -279,7 +278,7 @@ function TemplatesPage() {
                   </div>
                 </div>
                 <p className="mt-3 text-sm text-white/70 line-clamp-2">{(t.body_text || "").slice(0, 80)}{(t.body_text || "").length > 80 ? "…" : ""}</p>
-                {t.rejection_reason && (
+                {t.rejection_reason && t.rejection_reason !== 'NONE' && (
                   <p className="mt-2 text-[11px] text-red-400">Rejected: {t.rejection_reason}</p>
                 )}
                 <div className="mt-3 text-[11px] text-white/40">
@@ -426,12 +425,12 @@ function CreateTemplateModal({
       header_content: headerType === "TEXT" ? headerText : null,
       buttons: buttons.length
         ? buttons.map((b) =>
-            b.kind === "QUICK_REPLY"
-              ? { type: "QUICK_REPLY", text: b.text }
-              : b.kind === "URL"
+          b.kind === "QUICK_REPLY"
+            ? { type: "QUICK_REPLY", text: b.text }
+            : b.kind === "URL"
               ? { type: "URL", text: b.text, url: (b as any).url }
               : { type: "PHONE_NUMBER", text: b.text, phone_number: (b as any).phone_number },
-          )
+        )
         : null,
       variable_count: variableMatches.length,
     };
@@ -727,8 +726,8 @@ function PreviewModal({ template, onClose }: { template: Template; onClose: () =
     b.type === "URL"
       ? { kind: "URL", text: b.text, url: b.url }
       : b.type === "PHONE_NUMBER"
-      ? { kind: "PHONE_NUMBER", text: b.text, phone_number: b.phone_number }
-      : { kind: "QUICK_REPLY", text: b.text },
+        ? { kind: "PHONE_NUMBER", text: b.text, phone_number: b.phone_number }
+        : { kind: "QUICK_REPLY", text: b.text },
   );
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
