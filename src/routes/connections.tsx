@@ -25,6 +25,7 @@ type Connection = {
   phone_number: string;
   api_key: string | null;
   access_token: string | null;
+  waba_id: string | null;
   created_at: string;
   is_active: boolean;
 };
@@ -55,6 +56,7 @@ function ConnectionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newPhoneId, setNewPhoneId] = useState("");
+  const [newWabaId, setNewWabaId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
@@ -67,6 +69,7 @@ function ConnectionsPage() {
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editAccessToken, setEditAccessToken] = useState("");
+  const [editWabaId, setEditWabaId] = useState("");
   const [editTokenVisible, setEditTokenVisible] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -104,7 +107,7 @@ function ConnectionsPage() {
   const load = async (aid: string) => {
     const { data: rows, error } = await supabase
       .from("connected_phone_numbers")
-      .select("id, display_name, phone_number_id, api_key, access_token, message_count, connected_at, is_active")
+      .select("id, display_name, phone_number_id, api_key, access_token, waba_id, message_count, connected_at, is_active")
       .eq("agency_id", aid);
     console.log("agencyId:", aid);
     console.log("connections:", rows);
@@ -116,6 +119,7 @@ function ConnectionsPage() {
       phone_number: r.phone_number_id,
       api_key: r.api_key,
       access_token: r.access_token,
+      waba_id: r.waba_id ?? null,
       created_at: r.connected_at,
       is_active: r.is_active,
     }));
@@ -167,6 +171,7 @@ function ConnectionsPage() {
     setNewApiKey(null);
     setNewLabel("");
     setNewPhoneId("");
+    setNewWabaId("");
     setShowModal(true);
   };
 
@@ -186,6 +191,7 @@ function ConnectionsPage() {
         agency_id: userRow!.agency_id,
         phone_number_id: newPhoneId.trim(),
         display_name: newLabel.trim(),
+        waba_id: newWabaId.trim() || null,
         is_active: true,
       })
       .select()
@@ -221,7 +227,11 @@ function ConnectionsPage() {
     setSavingEdit(true);
     const { error } = await supabase
       .from("connected_phone_numbers")
-      .update({ display_name: editLabel.trim(), access_token: editAccessToken.trim() || null })
+      .update({
+        display_name: editLabel.trim(),
+        access_token: editAccessToken.trim() || null,
+        waba_id: editWabaId.trim() || null,
+      })
       .eq("id", editingConnection.id);
     setSavingEdit(false);
     if (error) { toast.error(error.message); return; }
@@ -361,7 +371,7 @@ function ConnectionsPage() {
                     Active
                   </span>
                   <button
-                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditTokenVisible(false); }}
+                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditWabaId(c.waba_id ?? ""); setEditTokenVisible(false); }}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white border border-white/10 transition-colors"
                     title="Edit connection"
                   >
@@ -517,6 +527,18 @@ function ConnectionsPage() {
                       Find this in Meta Business Manager → WhatsApp → Phone Numbers
                     </p>
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-white/80">WhatsApp Business Account ID (WABA ID)</label>
+                    <input
+                      value={newWabaId}
+                      onChange={(e) => setNewWabaId(e.target.value)}
+                      placeholder="e.g. 1234567890123456"
+                      className={`mt-1 ${inputClass}`}
+                    />
+                    <p className="text-[11px] text-white/40 mt-1.5">
+                      Found in Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 mt-6">
@@ -596,6 +618,18 @@ function ConnectionsPage() {
                 </div>
                 <p className="text-[11px] text-white/40 mt-1.5">
                   Found in Meta Developer Dashboard → Your App → WhatsApp → API Setup
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-white/80">WhatsApp Business Account ID (WABA ID)</label>
+                <input
+                  value={editWabaId}
+                  onChange={(e) => setEditWabaId(e.target.value)}
+                  placeholder="e.g. 1234567890123456"
+                  className={`mt-1 ${inputClass}`}
+                />
+                <p className="text-[11px] text-white/40 mt-1.5">
+                  Found in Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
                 </p>
               </div>
             </div>
