@@ -371,7 +371,7 @@ function ConnectionsPage() {
                     Active
                   </span>
                   <button
-                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditTokenVisible(false); }}
+                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditWabaId(c.waba_id ?? ""); setEditTokenVisible(false); }}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white border border-white/10 transition-colors"
                     title="Edit connection"
                   >
