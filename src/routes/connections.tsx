@@ -527,6 +527,18 @@ function ConnectionsPage() {
                       Find this in Meta Business Manager → WhatsApp → Phone Numbers
                     </p>
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-white/80">WhatsApp Business Account ID (WABA ID)</label>
+                    <input
+                      value={newWabaId}
+                      onChange={(e) => setNewWabaId(e.target.value)}
+                      placeholder="e.g. 1234567890123456"
+                      className={`mt-1 ${inputClass}`}
+                    />
+                    <p className="text-[11px] text-white/40 mt-1.5">
+                      Found in Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 mt-6">
