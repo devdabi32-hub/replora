@@ -23,6 +23,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ConnectionsRouteImport } from './routes/connections'
 import { Route as BroadcastsRouteImport } from './routes/broadcasts'
+import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as ApiDocsRouteImport } from './routes/api-docs'
 import { Route as ApiConfigurationRouteImport } from './routes/api-configuration'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -98,6 +99,11 @@ const BroadcastsRoute = BroadcastsRouteImport.update({
   path: '/broadcasts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AutomationsRoute = AutomationsRouteImport.update({
+  id: '/automations',
+  path: '/automations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDocsRoute = ApiDocsRouteImport.update({
   id: '/api-docs',
   path: '/api-docs',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/automations': typeof AutomationsRoute
   '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/automations': typeof AutomationsRoute
   '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/automations': typeof AutomationsRoute
   '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/automations'
     | '/broadcasts'
     | '/connections'
     | '/contacts'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/automations'
     | '/broadcasts'
     | '/connections'
     | '/contacts'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/automations'
     | '/broadcasts'
     | '/connections'
     | '/contacts'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ApiConfigurationRoute: typeof ApiConfigurationRoute
   ApiDocsRoute: typeof ApiDocsRoute
+  AutomationsRoute: typeof AutomationsRoute
   BroadcastsRoute: typeof BroadcastsRoute
   ConnectionsRoute: typeof ConnectionsRoute
   ContactsRoute: typeof ContactsRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BroadcastsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/automations': {
+      id: '/automations'
+      path: '/automations'
+      fullPath: '/automations'
+      preLoaderRoute: typeof AutomationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api-docs': {
       id: '/api-docs'
       path: '/api-docs'
@@ -400,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ApiConfigurationRoute: ApiConfigurationRoute,
   ApiDocsRoute: ApiDocsRoute,
+  AutomationsRoute: AutomationsRoute,
   BroadcastsRoute: BroadcastsRoute,
   ConnectionsRoute: ConnectionsRoute,
   ContactsRoute: ContactsRoute,
@@ -418,3 +439,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
