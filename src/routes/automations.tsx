@@ -6,8 +6,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { usePhoneContext } from "@/contexts/PhoneContext";
 import { Zap, ChevronDown, Eye, EyeOff, Save, CheckCircle2, Phone, Info } from "lucide-react";
 
-// @ts-ignore
-export const Route = createFileRoute("/automations" as any)({
+export const Route = createFileRoute("/automations")({
     head: () => ({ meta: [{ title: "Automations — Replora" }] }),
     component: AutomationsPage,
 });
