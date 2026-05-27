@@ -77,6 +77,14 @@ const DEFAULT_CONFIG: Config = {
 };
 
 function AutomationsPage() {
+    return (
+        <AppLayout>
+            <AutomationsContent />
+        </AppLayout>
+    );
+}
+
+function AutomationsContent() {
     const { selectedId: selectedPhone, loading: phoneLoading } = usePhoneContext();
     const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
     const [saving, setSaving] = useState(false);
@@ -204,242 +212,241 @@ function AutomationsPage() {
     }
 
     return (
-        <AppLayout>
-            <div className="max-w-2xl mx-auto px-6 lg:px-10 py-10">
 
-                <div className="mb-7">
-                    <h1 className="text-3xl font-semibold text-white tracking-tight">Automations</h1>
-                    <p className="text-sm text-white/60 mt-1.5">Configure AI engine and auto-reply rules per WhatsApp number.</p>
+        <div className="max-w-2xl mx-auto px-6 lg:px-10 py-10">
+
+            <div className="mb-7">
+                <h1 className="text-3xl font-semibold text-white tracking-tight">Automations</h1>
+                <p className="text-sm text-white/60 mt-1.5">Configure AI engine and auto-reply rules per WhatsApp number.</p>
+            </div>
+
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#0084ff]/10 border border-[#0084ff]/20 mb-6">
+                <Info className="h-4 w-4 text-[#0084ff] shrink-0 mt-0.5" />
+                <p className="text-xs text-[#0084ff]/90 leading-relaxed">
+                    Each WhatsApp number has its own AI engine config. Switch numbers from the top bar — config updates automatically.
+                </p>
+            </div>
+
+            {/* CARD 1 — AI Engine */}
+            <div className={card}>
+                <div className="flex items-center gap-2 mb-5">
+                    <Zap className="h-5 w-5 text-[#0084ff]" />
+                    <h2 className="text-base font-semibold text-white">
+                        AI Engine — <span className="text-white/60 font-normal">{activeDisplayName}</span>
+                    </h2>
                 </div>
 
-                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#0084ff]/10 border border-[#0084ff]/20 mb-6">
-                    <Info className="h-4 w-4 text-[#0084ff] shrink-0 mt-0.5" />
-                    <p className="text-xs text-[#0084ff]/90 leading-relaxed">
-                        Each WhatsApp number has its own AI engine config. Switch numbers from the top bar — config updates automatically.
-                    </p>
-                </div>
-
-                {/* CARD 1 — AI Engine */}
-                <div className={card}>
-                    <div className="flex items-center gap-2 mb-5">
-                        <Zap className="h-5 w-5 text-[#0084ff]" />
-                        <h2 className="text-base font-semibold text-white">
-                            AI Engine — <span className="text-white/60 font-normal">{activeDisplayName}</span>
-                        </h2>
+                {/* Provider + Model */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label className="text-xs font-medium text-white/70 mb-1.5 block">AI Provider</label>
+                        <div className="relative">
+                            <select value={config.ai_engine} onChange={e => changeProvider(e.target.value)}
+                                className={`${inp} appearance-none pr-8`}>
+                                {PROVIDERS.map(p => (
+                                    <option key={p.value} value={p.value} className="bg-[#0f1117]">{p.label}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-white/40 pointer-events-none" />
+                        </div>
                     </div>
-
-                    {/* Provider + Model */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    {!isWebhook && !isOff && (
                         <div>
-                            <label className="text-xs font-medium text-white/70 mb-1.5 block">AI Provider</label>
+                            <label className="text-xs font-medium text-white/70 mb-1.5 block">Model</label>
                             <div className="relative">
-                                <select value={config.ai_engine} onChange={e => changeProvider(e.target.value)}
+                                <select value={config.ai_model} onChange={e => set("ai_model", e.target.value)}
                                     className={`${inp} appearance-none pr-8`}>
-                                    {PROVIDERS.map(p => (
-                                        <option key={p.value} value={p.value} className="bg-[#0f1117]">{p.label}</option>
+                                    {models.map(m => (
+                                        <option key={m} value={m} className="bg-[#0f1117]">{m}</option>
                                     ))}
                                 </select>
                                 <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-white/40 pointer-events-none" />
                             </div>
                         </div>
-                        {!isWebhook && !isOff && (
-                            <div>
-                                <label className="text-xs font-medium text-white/70 mb-1.5 block">Model</label>
-                                <div className="relative">
-                                    <select value={config.ai_model} onChange={e => set("ai_model", e.target.value)}
-                                        className={`${inp} appearance-none pr-8`}>
-                                        {models.map(m => (
-                                            <option key={m} value={m} className="bg-[#0f1117]">{m}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-white/40 pointer-events-none" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    )}
+                </div>
 
-                    {/* API Key */}
-                    {!isWebhook && !isOff && (
-                        <div className="mb-4">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <label className="text-xs font-medium text-white/70">
-                                    {PROVIDERS.find(p => p.value === config.ai_engine)?.label ?? "API"} Key
-                                </label>
-                                {KEY_LINKS[config.ai_engine] && (
-                                    <a href={KEY_LINKS[config.ai_engine]} target="_blank" rel="noreferrer"
-                                        className="text-[10px] text-[#0084ff] hover:underline">
-                                        Get key ↗
-                                    </a>
-                                )}
-                            </div>
-                            <div className="relative">
-                                <input
-                                    type={keyVisible ? "text" : "password"}
-                                    value={keySaved && !keyVisible ? "••••••••••••••••••••••••" : config.ai_api_key}
-                                    onChange={e => { set("ai_api_key", e.target.value); setKeySaved(false); }}
-                                    placeholder={`Paste your ${PROVIDERS.find(p => p.value === config.ai_engine)?.label} key`}
-                                    className={`${inp} pr-10`}
-                                />
-                                <button type="button" onClick={() => setKeyVisible(v => !v)}
-                                    className="absolute right-3 top-3 text-white/40 hover:text-white/70">
-                                    {keyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
-                            {keySaved && (
-                                <p className="text-[10px] text-white/40 mt-1">Key saved. Eye icon to view, or type new key to replace.</p>
+                {/* API Key */}
+                {!isWebhook && !isOff && (
+                    <div className="mb-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-xs font-medium text-white/70">
+                                {PROVIDERS.find(p => p.value === config.ai_engine)?.label ?? "API"} Key
+                            </label>
+                            {KEY_LINKS[config.ai_engine] && (
+                                <a href={KEY_LINKS[config.ai_engine]} target="_blank" rel="noreferrer"
+                                    className="text-[10px] text-[#0084ff] hover:underline">
+                                    Get key ↗
+                                </a>
                             )}
                         </div>
-                    )}
-
-                    {/* Webhook URL */}
-                    {isWebhook && (
-                        <div className="mb-4">
-                            <label className="text-xs font-medium text-white/70 mb-1.5 block">Webhook URL (n8n or external)</label>
-                            <input value={config.webhook_url} onChange={e => set("webhook_url", e.target.value)}
-                                placeholder="https://your-n8n.com/webhook/xxx" className={inp} />
-                            <p className="text-[10px] text-white/40 mt-1.5">
-                                Incoming messages will be POSTed here. Your automation handles the reply.
-                            </p>
+                        <div className="relative">
+                            <input
+                                type={keyVisible ? "text" : "password"}
+                                value={keySaved && !keyVisible ? "••••••••••••••••••••••••" : config.ai_api_key}
+                                onChange={e => { set("ai_api_key", e.target.value); setKeySaved(false); }}
+                                placeholder={`Paste your ${PROVIDERS.find(p => p.value === config.ai_engine)?.label} key`}
+                                className={`${inp} pr-10`}
+                            />
+                            <button type="button" onClick={() => setKeyVisible(v => !v)}
+                                className="absolute right-3 top-3 text-white/40 hover:text-white/70">
+                                {keyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
                         </div>
-                    )}
+                        {keySaved && (
+                            <p className="text-[10px] text-white/40 mt-1">Key saved. Eye icon to view, or type new key to replace.</p>
+                        )}
+                    </div>
+                )}
 
-                    {/* System Prompt */}
-                    {!isWebhook && !isOff && (
-                        <div className="mb-5">
-                            <label className="text-xs font-medium text-white/70 mb-1.5 block">System Prompt</label>
-                            <textarea value={config.system_prompt} onChange={e => set("system_prompt", e.target.value)}
-                                rows={4}
-                                className="w-full px-3 py-2.5 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm resize-none" />
-                        </div>
-                    )}
+                {/* Webhook URL */}
+                {isWebhook && (
+                    <div className="mb-4">
+                        <label className="text-xs font-medium text-white/70 mb-1.5 block">Webhook URL (n8n or external)</label>
+                        <input value={config.webhook_url} onChange={e => set("webhook_url", e.target.value)}
+                            placeholder="https://your-n8n.com/webhook/xxx" className={inp} />
+                        <p className="text-[10px] text-white/40 mt-1.5">
+                            Incoming messages will be POSTed here. Your automation handles the reply.
+                        </p>
+                    </div>
+                )}
 
-                    {/* Auto Reply toggle */}
-                    <div className="flex items-center justify-between py-3 border-t border-white/[0.06]">
+                {/* System Prompt */}
+                {!isWebhook && !isOff && (
+                    <div className="mb-5">
+                        <label className="text-xs font-medium text-white/70 mb-1.5 block">System Prompt</label>
+                        <textarea value={config.system_prompt} onChange={e => set("system_prompt", e.target.value)}
+                            rows={4}
+                            className="w-full px-3 py-2.5 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm resize-none" />
+                    </div>
+                )}
+
+                {/* Auto Reply toggle */}
+                <div className="flex items-center justify-between py-3 border-t border-white/[0.06]">
+                    <div>
+                        <div className="text-sm font-medium text-white">Auto Reply</div>
+                        <div className="text-xs text-white/50 mt-0.5">AI will automatically reply to incoming messages</div>
+                    </div>
+                    <button onClick={() => set("auto_reply", !config.auto_reply)}
+                        className={`relative w-11 h-6 rounded-full transition-colors ${config.auto_reply ? "bg-[#0084ff]" : "bg-white/10"}`}>
+                        <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.auto_reply ? "translate-x-5" : "translate-x-0"}`} />
+                    </button>
+                </div>
+            </div>
+
+            {/* CARD 2 — Quick Automations */}
+            <div className={card}>
+                <h2 className="text-base font-semibold text-white mb-5">Quick Automations</h2>
+
+                {/* Welcome Message */}
+                <div className="mb-4">
+                    <div className="flex items-center justify-between py-2">
                         <div>
-                            <div className="text-sm font-medium text-white">Auto Reply</div>
-                            <div className="text-xs text-white/50 mt-0.5">AI will automatically reply to incoming messages</div>
+                            <div className="text-sm font-medium text-white">Welcome Message</div>
+                            <div className="text-xs text-white/50 mt-0.5">Send to new contacts on their first message</div>
                         </div>
-                        <button onClick={() => set("auto_reply", !config.auto_reply)}
-                            className={`relative w-11 h-6 rounded-full transition-colors ${config.auto_reply ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.auto_reply ? "translate-x-5" : "translate-x-0"}`} />
+                        <button onClick={() => set("welcome_message_enabled", !config.welcome_message_enabled)}
+                            className={`relative w-11 h-6 rounded-full transition-colors ${config.welcome_message_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
+                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.welcome_message_enabled ? "translate-x-5" : "translate-x-0"}`} />
+                        </button>
+                    </div>
+                    {config.welcome_message_enabled && (
+                        <input value={config.welcome_message_text}
+                            onChange={e => set("welcome_message_text", e.target.value)}
+                            className={`mt-2 ${inp}`} placeholder="Welcome message text…" />
+                    )}
+                </div>
+
+                {/* Out of Office */}
+                <div className="mb-4 border-t border-white/[0.05] pt-4">
+                    <div className="flex items-center justify-between py-2">
+                        <div>
+                            <div className="text-sm font-medium text-white">Out of Office</div>
+                            <div className="text-xs text-white/50 mt-0.5">Auto-reply during non-business hours</div>
+                        </div>
+                        <button onClick={() => set("out_of_office_enabled", !config.out_of_office_enabled)}
+                            className={`relative w-11 h-6 rounded-full transition-colors ${config.out_of_office_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
+                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.out_of_office_enabled ? "translate-x-5" : "translate-x-0"}`} />
+                        </button>
+                    </div>
+                    {config.out_of_office_enabled && (
+                        <div className="mt-2 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="text-[10px] text-white/50 mb-1 block">From (OFF time)</label>
+                                    <input type="time" value={config.out_of_office_start}
+                                        onChange={e => set("out_of_office_start", e.target.value)} className={inp} />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-white/50 mb-1 block">To (ON time)</label>
+                                    <input type="time" value={config.out_of_office_end}
+                                        onChange={e => set("out_of_office_end", e.target.value)} className={inp} />
+                                </div>
+                            </div>
+                            <input value={config.out_of_office_text}
+                                onChange={e => set("out_of_office_text", e.target.value)}
+                                className={inp} placeholder="Out of office message…" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Follow-up */}
+                <div className="border-t border-white/[0.05] pt-4">
+                    <div className="flex items-center justify-between py-2">
+                        <div>
+                            <div className="text-sm font-medium text-white">Follow-up Reminder</div>
+                            <div className="text-xs text-white/50 mt-0.5">Nudge contacts who haven't replied in 24 hours</div>
+                        </div>
+                        <button onClick={() => set("followup_enabled", !config.followup_enabled)}
+                            className={`relative w-11 h-6 rounded-full transition-colors ${config.followup_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
+                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.followup_enabled ? "translate-x-5" : "translate-x-0"}`} />
                         </button>
                     </div>
                 </div>
-
-                {/* CARD 2 — Quick Automations */}
-                <div className={card}>
-                    <h2 className="text-base font-semibold text-white mb-5">Quick Automations</h2>
-
-                    {/* Welcome Message */}
-                    <div className="mb-4">
-                        <div className="flex items-center justify-between py-2">
-                            <div>
-                                <div className="text-sm font-medium text-white">Welcome Message</div>
-                                <div className="text-xs text-white/50 mt-0.5">Send to new contacts on their first message</div>
-                            </div>
-                            <button onClick={() => set("welcome_message_enabled", !config.welcome_message_enabled)}
-                                className={`relative w-11 h-6 rounded-full transition-colors ${config.welcome_message_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.welcome_message_enabled ? "translate-x-5" : "translate-x-0"}`} />
-                            </button>
-                        </div>
-                        {config.welcome_message_enabled && (
-                            <input value={config.welcome_message_text}
-                                onChange={e => set("welcome_message_text", e.target.value)}
-                                className={`mt-2 ${inp}`} placeholder="Welcome message text…" />
-                        )}
-                    </div>
-
-                    {/* Out of Office */}
-                    <div className="mb-4 border-t border-white/[0.05] pt-4">
-                        <div className="flex items-center justify-between py-2">
-                            <div>
-                                <div className="text-sm font-medium text-white">Out of Office</div>
-                                <div className="text-xs text-white/50 mt-0.5">Auto-reply during non-business hours</div>
-                            </div>
-                            <button onClick={() => set("out_of_office_enabled", !config.out_of_office_enabled)}
-                                className={`relative w-11 h-6 rounded-full transition-colors ${config.out_of_office_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.out_of_office_enabled ? "translate-x-5" : "translate-x-0"}`} />
-                            </button>
-                        </div>
-                        {config.out_of_office_enabled && (
-                            <div className="mt-2 space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-[10px] text-white/50 mb-1 block">From (OFF time)</label>
-                                        <input type="time" value={config.out_of_office_start}
-                                            onChange={e => set("out_of_office_start", e.target.value)} className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-white/50 mb-1 block">To (ON time)</label>
-                                        <input type="time" value={config.out_of_office_end}
-                                            onChange={e => set("out_of_office_end", e.target.value)} className={inp} />
-                                    </div>
-                                </div>
-                                <input value={config.out_of_office_text}
-                                    onChange={e => set("out_of_office_text", e.target.value)}
-                                    className={inp} placeholder="Out of office message…" />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Follow-up */}
-                    <div className="border-t border-white/[0.05] pt-4">
-                        <div className="flex items-center justify-between py-2">
-                            <div>
-                                <div className="text-sm font-medium text-white">Follow-up Reminder</div>
-                                <div className="text-xs text-white/50 mt-0.5">Nudge contacts who haven't replied in 24 hours</div>
-                            </div>
-                            <button onClick={() => set("followup_enabled", !config.followup_enabled)}
-                                className={`relative w-11 h-6 rounded-full transition-colors ${config.followup_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.followup_enabled ? "translate-x-5" : "translate-x-0"}`} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Save Button */}
-                <button onClick={save} disabled={saving}
-                    className="w-full h-12 rounded-xl bg-[#0084ff] hover:bg-[#0066cc] text-white font-semibold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2 mb-5">
-                    <Save className="h-4 w-4" />
-                    {saving ? "Saving…" : "Save Configuration"}
-                </button>
-
-                {/* CARD 3 — All Numbers Status */}
-                <div className={card}>
-                    <h2 className="text-base font-semibold text-white mb-4">All Numbers — AI Status</h2>
-                    {allNumbers.length === 0 ? (
-                        <p className="text-sm text-white/40 text-center py-4">No numbers connected yet.</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {allNumbers.map(num => {
-                                const badge = ENGINE_BADGE[num.ai_engine] ?? ENGINE_BADGE.off;
-                                const isActive = num.id === selectedPhone;
-                                return (
-                                    <div key={num.id}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isActive ? "bg-[#0084ff]/10 border-[#0084ff]/30" : "bg-white/[0.02] border-white/[0.05]"
-                                            }`}>
-                                        <div className="h-8 w-8 rounded-full bg-[#0084ff]/10 flex items-center justify-center shrink-0">
-                                            <Phone className="h-3.5 w-3.5 text-[#0084ff]" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-medium text-white truncate">{num.display_name}</div>
-                                            <div className="text-xs text-white/40 truncate">{num.phone_number ?? "—"}</div>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.cls}`}>
-                                                {badge.label}
-                                            </span>
-                                            <span className={`h-2 w-2 rounded-full ${num.auto_reply ? "bg-[#00c853]" : "bg-white/20"}`} />
-                                        </div>
-                                        {isActive && <CheckCircle2 className="h-4 w-4 text-[#0084ff] shrink-0" />}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-
             </div>
-        </AppLayout>
+
+            {/* Save Button */}
+            <button onClick={save} disabled={saving}
+                className="w-full h-12 rounded-xl bg-[#0084ff] hover:bg-[#0066cc] text-white font-semibold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2 mb-5">
+                <Save className="h-4 w-4" />
+                {saving ? "Saving…" : "Save Configuration"}
+            </button>
+
+            {/* CARD 3 — All Numbers Status */}
+            <div className={card}>
+                <h2 className="text-base font-semibold text-white mb-4">All Numbers — AI Status</h2>
+                {allNumbers.length === 0 ? (
+                    <p className="text-sm text-white/40 text-center py-4">No numbers connected yet.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {allNumbers.map(num => {
+                            const badge = ENGINE_BADGE[num.ai_engine] ?? ENGINE_BADGE.off;
+                            const isActive = num.id === selectedPhone;
+                            return (
+                                <div key={num.id}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isActive ? "bg-[#0084ff]/10 border-[#0084ff]/30" : "bg-white/[0.02] border-white/[0.05]"
+                                        }`}>
+                                    <div className="h-8 w-8 rounded-full bg-[#0084ff]/10 flex items-center justify-center shrink-0">
+                                        <Phone className="h-3.5 w-3.5 text-[#0084ff]" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-medium text-white truncate">{num.display_name}</div>
+                                        <div className="text-xs text-white/40 truncate">{num.phone_number ?? "—"}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.cls}`}>
+                                            {badge.label}
+                                        </span>
+                                        <span className={`h-2 w-2 rounded-full ${num.auto_reply ? "bg-[#00c853]" : "bg-white/20"}`} />
+                                    </div>
+                                    {isActive && <CheckCircle2 className="h-4 w-4 text-[#0084ff] shrink-0" />}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+        </div>
     );
 }
