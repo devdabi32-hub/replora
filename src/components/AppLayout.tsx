@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  LayoutDashboard, Inbox, Users, BookOpen, Plug,
+  LayoutDashboard, Inbox, Users, BookOpen, Zap,
   Headphones, LogOut, Trash2, Tag, KanbanSquare,
   Settings as SettingsIcon, UserPlus, FileDown, Megaphone, LayoutTemplate,
 } from "lucide-react";
@@ -18,17 +18,36 @@ const SUPPORT_MAILTO =
   "mailto:care@replora.in?subject=Replora%20Support%20Request&body=Hi%20Replora%20Support%20Team%2C%20I%20need%20help%20with...";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; badgeKey?: "inbox" };
-const baseNav: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
-  { to: "/contacts", label: "Contacts", icon: Users },
-  { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
-  { to: "/broadcasts", label: "Broadcasts", icon: Megaphone },
-  { to: "/templates", label: "Templates", icon: LayoutTemplate },
-  { to: "/team", label: "Team", icon: UserPlus },
-  { to: "/api-docs", label: "API Docs", icon: BookOpen },
-  { to: "/connections", label: "Connections", icon: Plug },
+type NavSection = { label: string; items: NavItem[] };
+
+const navSections: NavSection[] = [
+  {
+    label: "MAIN",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
+      { to: "/contacts", label: "Contacts", icon: Users },
+    ],
+  },
+  {
+    label: "WORK",
+    items: [
+      { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
+      { to: "/broadcasts", label: "Broadcasts", icon: Megaphone },
+      { to: "/automations", label: "Automations", icon: Zap },
+      { to: "/templates", label: "Templates", icon: LayoutTemplate },
+    ],
+  },
+  {
+    label: "ACCOUNT",
+    items: [
+      { to: "/team", label: "Team", icon: UserPlus },
+      { to: "/api-docs", label: "API Docs", icon: BookOpen },
+      { to: "/settings", label: "Settings", icon: SettingsIcon },
+    ],
+  },
 ];
+
 const pricingNavItem: NavItem = { to: "/pricing", label: "Pricing", icon: Tag };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -97,7 +116,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const initial = (userEmail[0] || "A").toUpperCase();
   const hidePricing = plan === "agency";
-  const nav = hidePricing ? baseNav : [...baseNav, pricingNavItem];
+  const sections: NavSection[] = hidePricing
+    ? navSections
+    : navSections.map((s) =>
+      s.label === "ACCOUNT"
+        ? { ...s, items: [...s.items, pricingNavItem] }
+        : s
+    );
+  const flatNav = sections.flatMap((s) => s.items); // mobile nav ke liye
   void plan_status;
 
   return (
@@ -118,30 +144,39 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NumberSwitcher />
 
             {/* Top nav */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-              {nav.map((n) => {
-                const Icon = n.icon;
-                const active = pathname.startsWith(n.to);
-                return (
-                  <Link
-                    key={n.to}
-                    to={n.to}
-                    className={`group flex items-center gap-3 rounded-lg pl-3 pr-3 py-2.5 text-sm font-medium transition-all relative ${active
-                      ? "bg-white/[0.06] text-white"
-                      : "text-white/60 hover:bg-white/[0.04] hover:text-white"
-                      }`}
-                  >
-                    {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[#0084ff]" />}
-                    <Icon className="h-[18px] w-[18px]" />
-                    <span className="flex-1">{n.label}</span>
-                    {n.badgeKey === "inbox" && inboxCount > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center bg-[#0084ff] text-white">
-                        {inboxCount > 99 ? "99+" : inboxCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 px-3 py-4 overflow-y-auto">
+              {sections.map((section) => (
+                <div key={section.label} className="mb-5">
+                  <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest text-white/25 uppercase">
+                    {section.label}
+                  </div>
+                  <div className="space-y-0.5">
+                    {section.items.map((n) => {
+                      const Icon = n.icon;
+                      const active = pathname.startsWith(n.to);
+                      return (
+                        <Link
+                          key={n.to}
+                          to={n.to}
+                          className={`group flex items-center gap-3 rounded-lg pl-3 pr-3 py-2.5 text-sm font-medium transition-all relative ${active
+                            ? "bg-white/[0.06] text-white"
+                            : "text-white/60 hover:bg-white/[0.04] hover:text-white"
+                            }`}
+                        >
+                          {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[#0084ff]" />}
+                          <Icon className="h-[18px] w-[18px]" />
+                          <span className="flex-1">{n.label}</span>
+                          {n.badgeKey === "inbox" && inboxCount > 0 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center bg-[#0084ff] text-white">
+                              {inboxCount > 99 ? "99+" : inboxCount}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
 
             {/* Bottom: Support + Admin */}
@@ -201,7 +236,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Mobile bottom nav */}
           <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0f1117] text-slate-300 flex justify-around py-2 border-t border-white/10">
-            {nav.slice(0, 5).map((n) => {
+            {flatNav.slice(0, 5).map((n) => {
               const Icon = n.icon;
               const active = pathname.startsWith(n.to);
               return (
