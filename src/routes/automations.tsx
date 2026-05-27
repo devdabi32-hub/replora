@@ -77,7 +77,7 @@ const DEFAULT_CONFIG: Config = {
 };
 
 function AutomationsPage() {
-    const { selectedId: selectedPhone } = usePhoneContext();
+    const { selectedId: selectedPhone, loading: phoneLoading } = usePhoneContext();
     const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
     const [saving, setSaving] = useState(false);
     const [keyVisible, setKeyVisible] = useState(false);
@@ -179,6 +179,16 @@ function AutomationsPage() {
 
     const inp = "w-full h-11 px-3 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm";
     const card = "bg-[#0f1117] rounded-2xl border border-white/[0.07] p-6 mb-5";
+
+    if (phoneLoading) {
+        return (
+            <AppLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <p className="text-white/40 text-sm">Loading...</p>
+                </div>
+            </AppLayout>
+        );
+    }
 
     if (!selectedPhone) {
         return (
