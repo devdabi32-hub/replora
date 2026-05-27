@@ -26,7 +26,7 @@ import { Route as BroadcastsRouteImport } from './routes/broadcasts'
 import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as ApiDocsRouteImport } from './routes/api-docs'
 import { Route as ApiConfigurationRouteImport } from './routes/api-configuration'
-import { Route as AutomationsRouteImport } from './routes/automations'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TemplatesRoute = TemplatesRouteImport.update({
