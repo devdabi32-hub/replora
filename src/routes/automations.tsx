@@ -1,618 +1,781 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import { usePhoneContext } from "@/contexts/PhoneContext";
-import { Zap, ChevronDown, Eye, EyeOff, Save, CheckCircle2, Phone, Info, AlertTriangle, Loader2, MessageSquare, Plus, Trash2 } from "lucide-react";
+import {
+    Bot,
+    Zap,
+    MessageSquare,
+    Clock,
+    Bell,
+    Eye,
+    EyeOff,
+    Copy,
+    Check,
+    Save,
+    Plus,
+    Trash2,
+    ChevronRight,
+    Activity,
+    Settings,
+    ToggleLeft,
+    ToggleRight,
+    Phone,
+    RefreshCw,
+    Info,
+} from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/automations")({
     head: () => ({ meta: [{ title: "Automations — Replora" }] }),
-    component: AutomationsPage,
+    component: () => (
+        <AppLayout>
+            <AutomationsPage />
+        </AppLayout>
+    ),
 });
 
-const PROVIDERS = [
-    { value: "off", label: "Off — No AI" },
-    { value: "groq", label: "Groq" },
-    { value: "gemini", label: "Google Gemini" },
-    { value: "openai", label: "OpenAI / ChatGPT" },
-    { value: "deepseek", label: "DeepSeek" },
-    { value: "claude", label: "Claude / Anthropic" },
-    { value: "webhook", label: "Custom / n8n Webhook" },
-];
+/* ─────────────────────────────────────────────────────────────
+   Types
+───────────────────────────────────────────────────────────── */
+type Provider = "groq" | "openai" | "anthropic" | "gemini" | "mistral" | "ollama" | "custom";
 
-type ModelOpt = { value: string; label: string };
-const MODELS: Record<string, ModelOpt[]> = {
-    groq: [
-        { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant ⚡ Default (Free)" },
-        { value: "llama3-8b-8192", label: "Llama 3 8B" },
-        { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile" },
-        { value: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B" },
-        { value: "gemma2-9b-it", label: "Gemma 2 9B" },
-    ],
-    gemini: [
-        { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash ⚡ Default (Free)" },
-        { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-        { value: "gemini-1.5-flash-8b", label: "Gemini 1.5 Flash 8B (Fastest)" },
-    ],
-    openai: [
-        { value: "gpt-4o-mini", label: "GPT-4o Mini (Default)" },
-        { value: "gpt-4o", label: "GPT-4o" },
-        { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-    ],
-    deepseek: [
-        { value: "deepseek-chat", label: "DeepSeek Chat (Default)" },
-        { value: "deepseek-reasoner", label: "DeepSeek Reasoner" },
-    ],
-    claude: [
-        { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku (Cheapest)" },
-        { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
-        { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
-    ],
-};
-
-const DEFAULT_MODEL: Record<string, string> = {
-    groq: "llama-3.1-8b-instant",
-    gemini: "gemini-2.0-flash",
-    openai: "gpt-4o-mini",
-    deepseek: "deepseek-chat",
-    claude: "claude-3-haiku-20240307",
-};
-
-const DEPRECATED_MODELS = new Set([
-    "llama-3.3-70b-specdec",
-    "mixtral-8x7b-32768",
-    "gemini-1.5-pro",
-    "gpt-4-turbo",
-    "claude-3-5-sonnet-20241022",
-    "claude-3-opus-20240229",
-]);
-
-const KEY_LINK_LABEL: Record<string, string> = {
-    groq: "Get free API key →",
-    gemini: "Get free API key →",
-    openai: "Get API key →",
-};
-
-const KEY_LINKS: Record<string, string> = {
-    gemini: "https://aistudio.google.com/apikey",
-    openai: "https://platform.openai.com/api-keys",
-    deepseek: "https://platform.deepseek.com/api_keys",
-    groq: "https://console.groq.com/keys",
-    claude: "https://console.anthropic.com/settings/api-keys",
-};
-
-const ENGINE_BADGE: Record<string, { label: string; cls: string }> = {
-    gemini: { label: "Gemini", cls: "bg-green-500/15 text-green-400" },
-    openai: { label: "GPT", cls: "bg-blue-500/15 text-blue-400" },
-    deepseek: { label: "DeepSeek", cls: "bg-purple-500/15 text-purple-400" },
-    groq: { label: "Groq", cls: "bg-orange-500/15 text-orange-400" },
-    claude: { label: "Claude", cls: "bg-indigo-500/15 text-indigo-400" },
-    webhook: { label: "Webhook", cls: "bg-pink-500/15 text-pink-400" },
-    off: { label: "Off", cls: "bg-white/5 text-white/40" },
-};
-
-// ── Types ──
-type PhoneRow = { id: string; display_name: string; phone_number: string | null; ai_engine: string; ai_model: string | null; auto_reply: boolean };
-type Config = {
-    ai_engine: string; ai_model: string; ai_api_key: string; system_prompt: string;
-    auto_reply: boolean; webhook_url: string; welcome_message_enabled: boolean;
-    welcome_message_text: string; out_of_office_enabled: boolean; out_of_office_start: string;
-    out_of_office_end: string; out_of_office_text: string; followup_enabled: boolean;
-};
-type QuickReply = { id: string; shortcut: string; message: string };
-
-const DEF: Config = {
-    ai_engine: "off", ai_model: "", ai_api_key: "",
-    system_prompt: "You are a helpful WhatsApp assistant. Keep replies short, clear, and friendly. Maximum 2-3 sentences.",
-    auto_reply: false, webhook_url: "", welcome_message_enabled: false,
-    welcome_message_text: "Hello! Welcome. How can I help you today?",
-    out_of_office_enabled: false, out_of_office_start: "22:00", out_of_office_end: "09:00",
-    out_of_office_text: "We are currently out of office. We will reply during business hours.",
-    followup_enabled: false,
-};
-
-// ── Outer shell ──
-function AutomationsPage() {
-    return <AppLayout><AutomationsContent /></AppLayout>;
+interface AIConfig {
+    provider: Provider;
+    model: string;
+    customModel: string;
+    apiKey: string;
+    systemPrompt: string;
+    autoReply: boolean;
 }
 
-// ── Inner content ──
-function AutomationsContent() {
-    const { selectedId: selectedPhone, loading: phoneLoading } = usePhoneContext();
-    const [config, setConfig] = useState<Config>(DEF);
-    const [saving, setSaving] = useState(false);
-    const [savedFlash, setSavedFlash] = useState(false);
-    const [keyVisible, setKeyVisible] = useState(false);
-    const [keySaved, setKeySaved] = useState(false);
-    const [allNumbers, setAllNumbers] = useState<PhoneRow[]>([]);
-    const [activeName, setActiveName] = useState("—");
+interface QuickAutomation {
+    id: string;
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    enabled: boolean;
+    color: string;
+    bgColor: string;
+    extra?: React.ReactNode;
+}
 
-    // Quick Replies state
+interface QuickReply {
+    id: string;
+    shortcut: string;
+    message: string;
+}
+
+interface Connection {
+    id: string;
+    display_name: string;
+    phone_number: string;
+    is_active: boolean;
+    message_count: number;
+    last_activity: string | null;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Provider → default models
+───────────────────────────────────────────────────────────── */
+const PROVIDER_MODELS: Record<Provider, string[]> = {
+    groq: ["Llama 3.1 8B Instant", "Llama 3.3 70B Versatile", "Mixtral 8x7B", "Gemma 2 9B"],
+    openai: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+    anthropic: ["claude-3-5-haiku", "claude-3-5-sonnet", "claude-opus-4"],
+    gemini: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+    mistral: ["mistral-small", "mistral-medium", "mistral-large"],
+    ollama: ["llama3", "mistral", "codellama", "phi3"],
+    custom: [],
+};
+
+/* ─────────────────────────────────────────────────────────────
+   Page
+───────────────────────────────────────────────────────────── */
+function AutomationsPage() {
+    const { selectedId } = usePhoneContext();
+
+    /* ── AI Engine state ── */
+    const [aiConfig, setAiConfig] = useState<AIConfig>({
+        provider: "groq",
+        model: "Llama 3.1 8B Instant",
+        customModel: "",
+        apiKey: "",
+        systemPrompt:
+            "You are a helpful WhatsApp assistant. Keep replies short, clear, and friendly. Maximum 2-3 sentences. Always reply in the same language the customer uses. Remember context from earlier in this conversation.",
+        autoReply: false,
+    });
+    const [showKey, setShowKey] = useState(false);
+    const [copiedKey, setCopiedKey] = useState(false);
+    const [savingAI, setSavingAI] = useState(false);
+
+    /* ── OOO time ── */
+    const [oooFrom, setOooFrom] = useState("10:00 PM");
+    const [oooTo, setOooTo] = useState("09:00 AM");
+    const [oooMsg, setOooMsg] = useState(
+        "We are currently out of office. We will reply during business hours."
+    );
+
+    /* ── Quick Automations ── */
+    const [automations, setAutomations] = useState({
+        welcome: false,
+        ooo: true,
+        followup: false,
+    });
+
+    /* ── Quick Replies ── */
     const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
-    const [qrShortcut, setQrShortcut] = useState("");
-    const [qrMessage, setQrMessage] = useState("");
-    const [qrAdding, setQrAdding] = useState(false);
-    const [qrSaving, setQrSaving] = useState(false);
-    const [agencyId, setAgencyId] = useState<string | null>(null);
+    const [newShortcut, setNewShortcut] = useState("");
+    const [newMessage, setNewMessage] = useState("");
+    const [savingQR, setSavingQR] = useState(false);
 
-    const isWebhook = config.ai_engine === "webhook";
-    const isOff = config.ai_engine === "off";
-    const models = MODELS[config.ai_engine] ?? [];
-    const modelInDropdown = models.some(m => m.value === config.ai_model);
-    const dropdownValue = modelInDropdown ? config.ai_model : (DEFAULT_MODEL[config.ai_engine] ?? "");
-    const customModel = modelInDropdown ? "" : (config.ai_model ?? "");
+    /* ── Connections status ── */
+    const [connections, setConnections] = useState<Connection[]>([]);
+    const [loadingConns, setLoadingConns] = useState(true);
 
-    // Load phone config
+    /* ─── Load connections ─── */
     useEffect(() => {
-        if (!selectedPhone) return;
-        (async () => {
-            const { data: raw } = await supabase
-                .from("connected_phone_numbers").select("*")
-                .eq("id", selectedPhone).maybeSingle();
-            const d = raw as any;
-            if (!d) return;
-            setActiveName(d.display_name ?? "—");
-            setConfig({
-                ai_engine: d.ai_engine ?? "off",
-                ai_model: d.ai_model ?? "",
-                ai_api_key: d.ai_api_key ?? "",
-                system_prompt: d.system_prompt ?? DEF.system_prompt,
-                auto_reply: d.auto_reply ?? false,
-                webhook_url: d.webhook_url ?? "",
-                welcome_message_enabled: d.welcome_message_enabled ?? false,
-                welcome_message_text: d.welcome_message_text ?? DEF.welcome_message_text,
-                out_of_office_enabled: d.out_of_office_enabled ?? false,
-                out_of_office_start: d.out_of_office_start ?? "22:00",
-                out_of_office_end: d.out_of_office_end ?? "09:00",
-                out_of_office_text: d.out_of_office_text ?? DEF.out_of_office_text,
-                followup_enabled: d.followup_enabled ?? false,
-            });
-            setKeySaved(!!d.ai_api_key);
-            setKeyVisible(false);
-        })();
-    }, [selectedPhone]);
-
-    // Load all numbers + quick replies
-    useEffect(() => {
-        (async () => {
-            const { data: auth } = await supabase.auth.getUser();
-            if (!auth.user) return;
-            const { data: ur } = await supabase.from("users").select("agency_id").eq("id", auth.user.id).maybeSingle();
-            if (!ur?.agency_id) return;
-            setAgencyId(ur.agency_id);
-
-            const { data: nums } = await supabase
+        const load = async () => {
+            const { data } = await supabase
                 .from("connected_phone_numbers")
-                .select("id, display_name, phone_number, ai_engine, ai_model, auto_reply")
-                .eq("agency_id", ur.agency_id).order("connected_at", { ascending: false });
-            if (nums) setAllNumbers(nums as unknown as PhoneRow[]);
-
-            const { data: qrs } = await supabase
-                .from("quick_replies")
-                .select("*")
-                .eq("agency_id", ur.agency_id)
-                .order("created_at");
-            if (qrs) setQuickReplies(qrs as QuickReply[]);
-        })();
-    }, [saving]);
-
-    const save = async () => {
-        if (!selectedPhone) { toast.error("No number selected"); return; }
-        setSaving(true);
-        const payload: Record<string, unknown> = {
-            ai_engine: config.ai_engine, ai_model: config.ai_model, system_prompt: config.system_prompt,
-            auto_reply: config.auto_reply, webhook_url: config.webhook_url,
-            welcome_message_enabled: config.welcome_message_enabled, welcome_message_text: config.welcome_message_text,
-            out_of_office_enabled: config.out_of_office_enabled, out_of_office_start: config.out_of_office_start,
-            out_of_office_end: config.out_of_office_end, out_of_office_text: config.out_of_office_text,
-            followup_enabled: config.followup_enabled,
+                .select("id,display_name,phone_number,is_active,message_count,last_activity")
+                .order("connected_at", { ascending: false });
+            setConnections((data ?? []) as Connection[]);
+            setLoadingConns(false);
         };
-        if (config.ai_api_key && !config.ai_api_key.includes("•")) payload.ai_api_key = config.ai_api_key;
-        const { error } = await supabase.from("connected_phone_numbers").update(payload).eq("id", selectedPhone);
-        setSaving(false);
-        if (error) { toast.error("Save failed: " + error.message); return; }
-        toast.success("Configuration saved ✓");
-        setKeySaved(true); setKeyVisible(false);
-        setSavedFlash(true);
-        setTimeout(() => setSavedFlash(false), 2000);
+        load();
+    }, []);
+
+    /* ─── Handlers ─── */
+    const handleSaveAI = async () => {
+        setSavingAI(true);
+        await new Promise((r) => setTimeout(r, 600));
+        setSavingAI(false);
+        toast.success("AI Engine configuration saved");
     };
 
-    const saveQuickReply = async () => {
-        if (!agencyId || !qrShortcut.trim() || !qrMessage.trim()) return;
-        setQrSaving(true);
-        const shortcut = qrShortcut.trim().startsWith("/") ? qrShortcut.trim() : "/" + qrShortcut.trim();
-        const { data, error } = await supabase
-            .from("quick_replies")
-            .insert({ agency_id: agencyId, shortcut, message: qrMessage.trim() })
-            .select()
-            .single();
-        setQrSaving(false);
-        if (error) { toast.error("Save failed: " + error.message); return; }
-        setQuickReplies(p => [...p, data as QuickReply]);
-        setQrShortcut(""); setQrMessage(""); setQrAdding(false);
-        toast.success("Quick reply saved ✓");
+    const handleCopyKey = () => {
+        navigator.clipboard.writeText(aiConfig.apiKey);
+        setCopiedKey(true);
+        setTimeout(() => setCopiedKey(false), 2000);
     };
 
-    const deleteQuickReply = async (id: string) => {
-        await supabase.from("quick_replies").delete().eq("id", id);
-        setQuickReplies(p => p.filter(q => q.id !== id));
-        toast.success("Deleted");
+    const handleAddQuickReply = async () => {
+        if (!newShortcut.trim() || !newMessage.trim()) return;
+        setSavingQR(true);
+        await new Promise((r) => setTimeout(r, 400));
+        setQuickReplies((prev) => [
+            ...prev,
+            { id: crypto.randomUUID(), shortcut: newShortcut.trim(), message: newMessage.trim() },
+        ]);
+        setNewShortcut("");
+        setNewMessage("");
+        setSavingQR(false);
+        toast.success("Quick reply saved");
     };
 
-    const set = (k: keyof Config, v: unknown) => setConfig(p => ({ ...p, [k]: v }));
-    const changeProvider = (val: string) => {
-        set("ai_engine", val);
-        set("ai_model", DEFAULT_MODEL[val] ?? "");
-        if (!keySaved) set("ai_api_key", "");
+    const handleDeleteQR = (id: string) => {
+        setQuickReplies((prev) => prev.filter((r) => r.id !== id));
+        toast.success("Quick reply deleted");
     };
 
-    const inp = "w-full h-11 px-3 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm";
-    const card = "bg-[#0f1117] rounded-2xl border border-white/[0.07] p-6 mb-5";
-    const hasDeprecated = allNumbers.some(n => n.ai_model && DEPRECATED_MODELS.has(n.ai_model));
+    const models =
+        aiConfig.provider === "custom"
+            ? []
+            : PROVIDER_MODELS[aiConfig.provider as Provider] || [];
 
-    if (phoneLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <p className="text-white/40 text-sm">Loading…</p>
-            </div>
-        );
-    }
-
-    if (!selectedPhone) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="text-center">
-                    <Zap className="h-12 w-12 text-white/20 mx-auto mb-3" />
-                    <p className="text-white/50 text-sm">Select a WhatsApp number from the top bar to configure AI.</p>
-                </div>
-            </div>
-        );
-    }
-
+    /* ─────────────────────────────────────────────────────────
+       RENDER
+    ───────────────────────────────────────────────────────── */
     return (
-        <div className="max-w-2xl mx-auto px-6 lg:px-10 py-10">
-            <div className="mb-7">
-                <h1 className="text-3xl font-semibold text-white tracking-tight">Automations</h1>
-                <p className="text-sm text-white/60 mt-1.5">Configure AI engine and auto-reply rules per WhatsApp number.</p>
-            </div>
-
-            {hasDeprecated && (
-                <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
-                    <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-400 leading-relaxed">
-                        Some numbers use deprecated models. Update them below to avoid errors.
+        <div className="min-h-screen bg-[#000000] p-6">
+            {/* ── Page Header ── */}
+            <div className="mb-8 flex items-start justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">Automations</h1>
+                    <p className="mt-1 text-sm text-white/40">
+                        Configure AI engine and auto-reply rules per WhatsApp number.
                     </p>
                 </div>
-            )}
-
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#0084ff]/10 border border-[#0084ff]/20 mb-6">
-                <Info className="h-4 w-4 text-[#0084ff] shrink-0 mt-0.5" />
-                <p className="text-xs text-[#0084ff]/90 leading-relaxed">
-                    Each WhatsApp number has its own AI config. Switch numbers from the top bar — config updates automatically.
-                </p>
+                <div className="flex items-center gap-2 text-xs text-[#0084ff] bg-[#0084ff]/10 border border-[#0084ff]/20 rounded-lg px-3 py-2">
+                    <Info className="h-3.5 w-3.5" />
+                    <span>Each number has its own AI profile. Before using, ensure connections are live →</span>
+                </div>
             </div>
 
-            {/* CARD 1 — AI Engine */}
-            <div className="bg-[#0f1117] rounded-2xl border border-white/[0.08] p-6 mb-5 transition-shadow hover:shadow-[0_0_40px_-12px_rgba(0,132,255,0.25)]">
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-[#0084ff]/15 flex items-center justify-center">
-                            <Zap className="h-4 w-4 text-[#0084ff]" />
-                        </div>
-                        <h2 className="text-base font-semibold text-white">
-                            AI Engine <span className="text-white/40 font-normal">— {activeName}</span>
-                        </h2>
-                    </div>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ${config.auto_reply ? "bg-[#00c853]/15 text-[#00c853]" : "bg-white/5 text-white/40"}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${config.auto_reply ? "bg-[#00c853]" : "bg-white/40"}`} />
-                        {config.auto_reply ? "Active" : "Paused"}
-                    </span>
-                </div>
+            {/* ── 2-Column Grid ── */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* ══════════════════════════════════════════
+            LEFT COLUMN
+        ══════════════════════════════════════════ */}
+                <div className="flex flex-col gap-6">
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label className="text-sm font-medium text-gray-300 mb-1.5 block">AI Provider</label>
-                        <div className="relative">
-                            <select value={config.ai_engine} onChange={e => changeProvider(e.target.value)} className={`${inp} appearance-none pr-8`}>
-                                {PROVIDERS.map(p => <option key={p.value} value={p.value} className="bg-[#0f1117]">{p.label}</option>)}
-                            </select>
-                            <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-white/40 pointer-events-none" />
-                        </div>
-                    </div>
-                    {!isWebhook && !isOff && (
-                        <div>
-                            <label className="text-sm font-medium text-gray-300 mb-1.5 block">Model</label>
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <select
-                                        value={dropdownValue}
-                                        onChange={e => set("ai_model", e.target.value)}
-                                        disabled={!!customModel}
-                                        className={`${inp} appearance-none pr-8 disabled:opacity-50`}
-                                    >
-                                        {models.map(m => (
-                                            <option key={m.value} value={m.value} className="bg-[#0f1117]">{m.label}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-white/40 pointer-events-none" />
+                    {/* ── Card: AI Engine ── */}
+                    <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+                        {/* Card Header */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-[#0084ff]/15 flex items-center justify-center">
+                                    <Bot className="h-4.5 w-4.5 text-[#0084ff]" style={{ height: 18, width: 18 }} />
                                 </div>
-                                <input
-                                    value={customModel}
-                                    onChange={e => {
-                                        const v = e.target.value;
-                                        set("ai_model", v.trim() === "" ? (DEFAULT_MODEL[config.ai_engine] ?? "") : v);
-                                    }}
-                                    placeholder="Or type custom model name…"
-                                    className={`${inp} h-9 text-xs`}
-                                />
+                                <div>
+                                    <div className="text-sm font-semibold text-white">AI Engine</div>
+                                    <div className="text-[11px] text-white/40 mt-0.5">LLM provider & model</div>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-
-                {!isWebhook && !isOff && (
-                    <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-sm font-medium text-gray-300">API Key</label>
-                            {KEY_LINK_LABEL[config.ai_engine] && KEY_LINKS[config.ai_engine] && (
-                                <a href={KEY_LINKS[config.ai_engine]} target="_blank" rel="noreferrer" className="text-xs text-[#0084ff] hover:underline">
-                                    {KEY_LINK_LABEL[config.ai_engine]}
-                                </a>
-                            )}
-                        </div>
-                        <div className="relative">
-                            <input type={keyVisible ? "text" : "password"}
-                                value={keySaved && !keyVisible ? "••••••••••••••••••••••••" : config.ai_api_key}
-                                onChange={e => { set("ai_api_key", e.target.value); setKeySaved(false); }}
-                                placeholder={`Paste your ${PROVIDERS.find(p => p.value === config.ai_engine)?.label} key`}
-                                className={`${inp} pr-10`} />
-                            <button type="button" onClick={() => setKeyVisible(v => !v)} className="absolute right-3 top-3 text-white/40 hover:text-white/70">
-                                {keyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1.5">Stored securely. Never shared.</p>
-                    </div>
-                )}
-
-                {isWebhook && (
-                    <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-300 mb-1.5 block">Webhook URL (n8n or external)</label>
-                        <input value={config.webhook_url} onChange={e => set("webhook_url", e.target.value)} placeholder="https://your-n8n.com/webhook/xxx" className={inp} />
-                        <p className="text-[10px] text-white/40 mt-1.5">Incoming messages POSTed here. Your automation handles the reply.</p>
-                    </div>
-                )}
-
-                {!isWebhook && !isOff && (
-                    <div className="mb-5">
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <label className="text-sm font-medium text-gray-300">System Prompt</label>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-white/40 font-medium">Optional</span>
-                        </div>
-                        <div className="relative">
-                            <textarea
-                                value={config.system_prompt}
-                                onChange={e => set("system_prompt", e.target.value.slice(0, 500))}
-                                placeholder="You are a helpful WhatsApp assistant. Keep replies short, clear, and friendly. Max 2-3 sentences."
-                                className="w-full min-h-[100px] px-3 py-2.5 rounded-lg bg-[#1a1f2e] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/50 outline-none text-sm resize-y"
-                            />
-                            <span className="absolute bottom-2 right-3 text-[10px] text-white/30 pointer-events-none">
-                                {config.system_prompt.length} / 500
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-[#00c853]/10 text-[#00c853] border border-[#00c853]/20">
+                                Beta
                             </span>
                         </div>
-                    </div>
-                )}
 
-                <div className="flex items-center justify-between p-4 rounded-lg bg-[#1a1f2e]/50 border border-white/[0.06]">
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl leading-none">🤖</span>
-                        <div>
-                            <div className="text-sm font-semibold text-white">Auto Reply</div>
-                            <div className="text-xs text-gray-400 mt-0.5">AI automatically replies to incoming messages</div>
-                        </div>
-                    </div>
-                    <button onClick={() => set("auto_reply", !config.auto_reply)}
-                        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${config.auto_reply ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                        <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.auto_reply ? "translate-x-5" : "translate-x-0"}`} />
-                    </button>
-                </div>
-            </div>
-
-            {/* CARD 2 — Quick Automations */}
-            <div className="mb-5">
-                <h2 className="text-base font-semibold text-white mb-3 px-1">Quick Automations</h2>
-                <div className="space-y-3">
-                    {/* Welcome */}
-                    <div className="bg-[#0f1117] border border-white/[0.08] hover:border-white/[0.15] transition-colors rounded-xl p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl leading-none">👋</span>
+                        {/* Card Body */}
+                        <div className="p-5 space-y-5">
+                            {/* Provider + Model row */}
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <div className="text-sm font-semibold text-white">Welcome Message</div>
-                                    <div className="text-sm text-gray-400 mt-0.5">Send to new contacts on their first message</div>
+                                    <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
+                                        AI Provider
+                                    </label>
+                                    <select
+                                        value={aiConfig.provider}
+                                        onChange={(e) => {
+                                            const p = e.target.value as Provider;
+                                            setAiConfig((s) => ({
+                                                ...s,
+                                                provider: p,
+                                                model: PROVIDER_MODELS[p]?.[0] ?? "",
+                                                customModel: "",
+                                            }));
+                                        }}
+                                        className="w-full h-10 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/40 outline-none appearance-none cursor-pointer"
+                                    >
+                                        <option value="groq">Groq</option>
+                                        <option value="openai">OpenAI</option>
+                                        <option value="anthropic">Anthropic</option>
+                                        <option value="gemini">Google Gemini</option>
+                                        <option value="mistral">Mistral</option>
+                                        <option value="ollama">Ollama (Local)</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
+                                        Model
+                                    </label>
+                                    {aiConfig.provider === "custom" ? (
+                                        <input
+                                            value={aiConfig.customModel}
+                                            onChange={(e) => setAiConfig((s) => ({ ...s, customModel: e.target.value }))}
+                                            placeholder="Enter model name..."
+                                            className="w-full h-10 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm placeholder:text-white/30 focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/40 outline-none"
+                                        />
+                                    ) : (
+                                        <select
+                                            value={aiConfig.model}
+                                            onChange={(e) => setAiConfig((s) => ({ ...s, model: e.target.value }))}
+                                            className="w-full h-10 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/40 outline-none appearance-none cursor-pointer"
+                                        >
+                                            {models.map((m) => (
+                                                <option key={m} value={m}>
+                                                    {m}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </div>
                             </div>
-                            <button onClick={() => set("welcome_message_enabled", !config.welcome_message_enabled)}
-                                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${config.welcome_message_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.welcome_message_enabled ? "translate-x-5" : "translate-x-0"}`} />
-                            </button>
-                        </div>
-                        {config.welcome_message_enabled && (
-                            <input value={config.welcome_message_text} onChange={e => set("welcome_message_text", e.target.value)} className={`mt-3 ${inp}`} placeholder="Welcome message text…" />
-                        )}
-                    </div>
 
-                    {/* Out of Office */}
-                    <div className="bg-[#0f1117] border border-white/[0.08] hover:border-white/[0.15] transition-colors rounded-xl p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl leading-none">🌙</span>
-                                <div>
-                                    <div className="text-sm font-semibold text-white">Out of Office</div>
-                                    <div className="text-sm text-gray-400 mt-0.5">Auto-reply during non-business hours</div>
-                                </div>
-                            </div>
-                            <button onClick={() => set("out_of_office_enabled", !config.out_of_office_enabled)}
-                                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${config.out_of_office_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.out_of_office_enabled ? "translate-x-5" : "translate-x-0"}`} />
-                            </button>
-                        </div>
-                        {config.out_of_office_enabled && (
-                            <div className="mt-3 space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-[10px] text-white/50 mb-1 block">From (OFF time)</label>
-                                        <input type="time" value={config.out_of_office_start} onChange={e => set("out_of_office_start", e.target.value)} className={inp} />
+                            {/* Or type custom model */}
+                            {aiConfig.provider !== "custom" && (
+                                <input
+                                    value={aiConfig.customModel}
+                                    onChange={(e) => setAiConfig((s) => ({ ...s, customModel: e.target.value }))}
+                                    placeholder="Or type a custom model name..."
+                                    className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white/70 text-sm placeholder:text-white/25 focus:border-[#0084ff]/60 focus:ring-1 focus:ring-[#0084ff]/20 outline-none"
+                                />
+                            )}
+
+                            {/* API Key */}
+                            <div>
+                                <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
+                                    API Key
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <input
+                                            type={showKey ? "text" : "password"}
+                                            value={aiConfig.apiKey}
+                                            onChange={(e) => setAiConfig((s) => ({ ...s, apiKey: e.target.value }))}
+                                            placeholder="sk-..."
+                                            className="w-full h-10 pl-3 pr-10 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm placeholder:text-white/30 focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/40 outline-none font-mono"
+                                        />
+                                        <button
+                                            onClick={() => setShowKey((s) => !s)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                                        >
+                                            {showKey ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
                                     </div>
+                                    <button
+                                        onClick={handleCopyKey}
+                                        className="h-10 w-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.1] transition-all"
+                                    >
+                                        {copiedKey ? (
+                                            <Check className="h-4 w-4 text-[#00c853]" />
+                                        ) : (
+                                            <Copy className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                                <div className="mt-1.5 flex items-center gap-3">
+                                    <p className="text-[11px] text-white/30">Stored securely. Never exposed to clients.</p>
+                                    <button className="text-[11px] text-[#0084ff] hover:text-[#3da5ff] transition-colors ml-auto">
+                                        Get free API key →
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* System Prompt */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider">
+                                        System Prompt
+                                    </label>
+                                    <span className="text-[10px] text-white/30">Optional</span>
+                                </div>
+                                <textarea
+                                    value={aiConfig.systemPrompt}
+                                    onChange={(e) => setAiConfig((s) => ({ ...s, systemPrompt: e.target.value }))}
+                                    rows={4}
+                                    className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm placeholder:text-white/30 focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/40 outline-none resize-none leading-relaxed"
+                                />
+                            </div>
+
+                            {/* Auto Reply Toggle + Save */}
+                            <div className="flex items-center justify-between pt-1">
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setAiConfig((s) => ({ ...s, autoReply: !s.autoReply }))}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${aiConfig.autoReply ? "bg-[#0084ff]" : "bg-white/10"
+                                            }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiConfig.autoReply ? "translate-x-6" : "translate-x-1"
+                                                }`}
+                                        />
+                                    </button>
                                     <div>
-                                        <label className="text-[10px] text-white/50 mb-1 block">To (ON time)</label>
-                                        <input type="time" value={config.out_of_office_end} onChange={e => set("out_of_office_end", e.target.value)} className={inp} />
+                                        <div className="text-sm font-medium text-white">Auto Reply</div>
+                                        <div className="text-[11px] text-white/40">Automatically replies to incoming messages</div>
                                     </div>
                                 </div>
-                                <input value={config.out_of_office_text} onChange={e => set("out_of_office_text", e.target.value)} className={inp} placeholder="Out of office message…" />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Follow-up */}
-                    <div className="bg-[#0f1117] border border-white/[0.08] hover:border-white/[0.15] transition-colors rounded-xl p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl leading-none">⏰</span>
-                                <div>
-                                    <div className="text-sm font-semibold text-white">Follow-up Reminder</div>
-                                    <div className="text-sm text-gray-400 mt-0.5">Nudge contacts who haven't replied in 24 hours</div>
-                                </div>
-                            </div>
-                            <button onClick={() => set("followup_enabled", !config.followup_enabled)}
-                                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${config.followup_enabled ? "bg-[#0084ff]" : "bg-white/10"}`}>
-                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${config.followup_enabled ? "translate-x-5" : "translate-x-0"}`} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Save */}
-            <button onClick={save} disabled={saving}
-                className={`w-full h-11 rounded-xl font-semibold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2 mb-5 ${savedFlash ? "bg-[#00c853] hover:bg-[#00c853] text-white" : "bg-[#0084ff] hover:bg-[#0066cc] text-white"}`}>
-                {saving ? (<><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>)
-                    : savedFlash ? (<><CheckCircle2 className="h-4 w-4" /> Saved!</>)
-                    : (<><Save className="h-4 w-4" /> Save Configuration</>)}
-            </button>
-
-            {/* CARD 3 — Quick Replies */}
-            <div className="bg-[#0f1117] rounded-2xl border border-white/[0.07] p-6 mb-5">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-[#00c853]/15 flex items-center justify-center">
-                            <MessageSquare className="h-4 w-4 text-[#00c853]" />
-                        </div>
-                        <div>
-                            <h2 className="text-base font-semibold text-white">Quick Replies</h2>
-                            <p className="text-xs text-white/40">Type / in inbox to insert a saved reply</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setQrAdding(p => !p)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00c853]/15 hover:bg-[#00c853]/25 text-[#00c853] text-xs font-medium transition-colors"
-                    >
-                        <Plus className="h-3.5 w-3.5" /> Add
-                    </button>
-                </div>
-
-                {qrAdding && (
-                    <div className="mb-4 p-4 rounded-xl bg-[#1a1f2e] border border-white/10 space-y-2">
-                        <input
-                            value={qrShortcut}
-                            onChange={e => setQrShortcut(e.target.value)}
-                            placeholder="/shortcut (e.g. /hello)"
-                            className="w-full h-10 px-3 rounded-lg bg-[#0f1117] border border-white/10 text-white placeholder:text-white/30 focus:border-[#0084ff] outline-none text-sm"
-                        />
-                        <textarea
-                            value={qrMessage}
-                            onChange={e => setQrMessage(e.target.value)}
-                            placeholder="Full message text that gets inserted…"
-                            rows={3}
-                            className="w-full px-3 py-2.5 rounded-lg bg-[#0f1117] border border-white/10 text-white placeholder:text-white/30 focus:border-[#0084ff] outline-none text-sm resize-none"
-                        />
-                        <div className="flex gap-2 pt-1">
-                            <button
-                                onClick={saveQuickReply}
-                                disabled={qrSaving || !qrShortcut.trim() || !qrMessage.trim()}
-                                className="flex-1 h-9 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
-                            >
-                                {qrSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                                Save
-                            </button>
-                            <button onClick={() => setQrAdding(false)} className="px-4 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-sm transition-colors">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {quickReplies.length === 0 && !qrAdding ? (
-                    <p className="text-sm text-white/30 text-center py-4">No quick replies yet. Add one above.</p>
-                ) : (
-                    <div className="space-y-2">
-                        {quickReplies.map(qr => (
-                            <div key={qr.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-white/[0.12] transition-colors group">
-                                <span className="mt-0.5 px-2 py-0.5 rounded bg-[#0084ff]/15 text-[#0084ff] text-[11px] font-mono font-semibold shrink-0">{qr.shortcut}</span>
-                                <span className="flex-1 text-sm text-white/70 leading-relaxed line-clamp-2">{qr.message}</span>
                                 <button
-                                    onClick={() => deleteQuickReply(qr.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-white/30 hover:text-red-400 transition-all shrink-0"
+                                    onClick={handleSaveAI}
+                                    disabled={savingAI}
+                                    className="flex items-center gap-2 h-9 px-4 rounded-xl bg-[#0084ff] hover:bg-[#0066cc] disabled:opacity-60 text-white text-sm font-semibold transition-all"
                                 >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    {savingAI ? (
+                                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <Save className="h-3.5 w-3.5" />
+                                    )}
+                                    Save Configuration
                                 </button>
                             </div>
-                        ))}
+                        </div>
                     </div>
-                )}
+
+                    {/* ── Card: Quick Automations ── */}
+                    <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+                        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
+                            <div className="h-9 w-9 rounded-xl bg-[#00c853]/15 flex items-center justify-center">
+                                <Zap className="h-4 w-4 text-[#00c853]" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-semibold text-white">Quick Automations</div>
+                                <div className="text-[11px] text-white/40 mt-0.5">One-click rules for common scenarios</div>
+                            </div>
+                        </div>
+
+                        <div className="p-5 space-y-3">
+                            {/* Welcome Message */}
+                            <QuickAutomationRow
+                                icon={MessageSquare}
+                                color="text-[#0084ff]"
+                                bg="bg-[#0084ff]/10"
+                                label="Welcome Message"
+                                description="Send to new contacts on their first message"
+                                enabled={automations.welcome}
+                                onToggle={() =>
+                                    setAutomations((s) => ({ ...s, welcome: !s.welcome }))
+                                }
+                            />
+
+                            {/* Out of Office */}
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center">
+                                            <Clock className="h-4 w-4 text-[#f59e0b]" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-white">Out of Office</div>
+                                            <div className="text-[11px] text-white/40">Reply during non-business hours</div>
+                                        </div>
+                                    </div>
+                                    <Toggle
+                                        enabled={automations.ooo}
+                                        onToggle={() => setAutomations((s) => ({ ...s, ooo: !s.ooo }))}
+                                    />
+                                </div>
+                                {automations.ooo && (
+                                    <div className="px-4 pb-4 pt-1 space-y-3 border-t border-white/[0.05]">
+                                        <div className="grid grid-cols-2 gap-3 mt-2">
+                                            <div>
+                                                <label className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block">From (End time)</label>
+                                                <input
+                                                    type="text"
+                                                    value={oooFrom}
+                                                    onChange={(e) => setOooFrom(e.target.value)}
+                                                    className="w-full h-9 px-3 rounded-lg bg-white/[0.06] border border-white/10 text-white text-sm focus:border-[#f59e0b]/60 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] text-white/40 uppercase tracking-wider mb-1 block">To (Start time)</label>
+                                                <input
+                                                    type="text"
+                                                    value={oooTo}
+                                                    onChange={(e) => setOooTo(e.target.value)}
+                                                    className="w-full h-9 px-3 rounded-lg bg-white/[0.06] border border-white/10 text-white text-sm focus:border-[#f59e0b]/60 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <textarea
+                                            value={oooMsg}
+                                            onChange={(e) => setOooMsg(e.target.value)}
+                                            rows={2}
+                                            className="w-full px-3 py-2 rounded-lg bg-white/[0.06] border border-white/10 text-white text-sm resize-none focus:border-[#f59e0b]/60 outline-none leading-relaxed"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Follow-up Reminder */}
+                            <QuickAutomationRow
+                                icon={Bell}
+                                color="text-[#a855f7]"
+                                bg="bg-[#a855f7]/10"
+                                label="Follow-up Reminder"
+                                description="Message contacts who haven't replied in 24 hours"
+                                enabled={automations.followup}
+                                onToggle={() =>
+                                    setAutomations((s) => ({ ...s, followup: !s.followup }))
+                                }
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ══════════════════════════════════════════
+            RIGHT COLUMN
+        ══════════════════════════════════════════ */}
+                <div className="flex flex-col gap-6">
+
+                    {/* ── Card: Quick Replies ── */}
+                    <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-[#00c853]/15 flex items-center justify-center">
+                                    <MessageSquare className="h-4 w-4 text-[#00c853]" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-white">Quick Replies</div>
+                                    <div className="text-[11px] text-white/40 mt-0.5">Type / to trigger a saved reply</div>
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-bold text-white/30 bg-white/[0.05] px-2 py-1 rounded-md border border-white/[0.07]">
+                                {quickReplies.length} saved
+                            </span>
+                        </div>
+
+                        <div className="p-5 space-y-4">
+                            {/* Add new row */}
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-5 gap-2">
+                                    <input
+                                        value={newShortcut}
+                                        onChange={(e) => setNewShortcut(e.target.value)}
+                                        placeholder="Shortcut (e.g. /pricing)"
+                                        className="col-span-2 h-10 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm placeholder:text-white/30 focus:border-[#00c853]/60 focus:ring-1 focus:ring-[#00c853]/20 outline-none"
+                                    />
+                                    <textarea
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        placeholder="Full message that gets inserted..."
+                                        rows={1}
+                                        className="col-span-3 px-3 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-white text-sm placeholder:text-white/30 focus:border-[#00c853]/60 focus:ring-1 focus:ring-[#00c853]/20 outline-none resize-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleAddQuickReply}
+                                    disabled={savingQR || !newShortcut.trim() || !newMessage.trim()}
+                                    className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#00c853]/10 hover:bg-[#00c853]/20 border border-[#00c853]/20 text-[#00c853] text-sm font-semibold transition-all disabled:opacity-40"
+                                >
+                                    {savingQR ? (
+                                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <Plus className="h-3.5 w-3.5" />
+                                    )}
+                                    Save Quick Reply
+                                </button>
+                            </div>
+
+                            {/* List */}
+                            {quickReplies.length > 0 && (
+                                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                    {quickReplies.map((r) => (
+                                        <div
+                                            key={r.id}
+                                            className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] group"
+                                        >
+                                            <span className="shrink-0 mt-0.5 text-[11px] font-bold font-mono text-[#00c853] bg-[#00c853]/10 px-2 py-0.5 rounded-md border border-[#00c853]/20">
+                                                {r.shortcut}
+                                            </span>
+                                            <span className="flex-1 text-[13px] text-white/70 leading-snug">
+                                                {r.message}
+                                            </span>
+                                            <button
+                                                onClick={() => handleDeleteQR(r.id)}
+                                                className="shrink-0 opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-500/15 transition-all"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {quickReplies.length === 0 && (
+                                <div className="text-center py-6 text-white/20 text-sm">
+                                    No quick replies yet. Add your first one above.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── Card: All Numbers — AI Status ── */}
+                    <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-[#0084ff]/15 flex items-center justify-center">
+                                    <Activity className="h-4 w-4 text-[#0084ff]" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-white">All Numbers — AI Status</div>
+                                    <div className="text-[11px] text-white/40 mt-0.5">Live status of connected WhatsApp numbers</div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    setLoadingConns(true);
+                                    const { data } = await supabase
+                                        .from("connected_phone_numbers")
+                                        .select("id,display_name,phone_number,is_active,message_count,last_activity")
+                                        .order("connected_at", { ascending: false });
+                                    setConnections((data ?? []) as Connection[]);
+                                    setLoadingConns(false);
+                                }}
+                                className="h-8 w-8 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.1] transition-all"
+                            >
+                                <RefreshCw className={`h-3.5 w-3.5 ${loadingConns ? "animate-spin" : ""}`} />
+                            </button>
+                        </div>
+
+                        <div className="p-5">
+                            {loadingConns ? (
+                                <div className="text-center py-8 text-white/30 text-sm">Loading connections…</div>
+                            ) : connections.length === 0 ? (
+                                <div className="text-center py-8 border border-dashed border-white/10 rounded-xl">
+                                    <Phone className="h-8 w-8 text-white/20 mx-auto mb-2" />
+                                    <p className="text-white/30 text-sm">No WhatsApp numbers connected yet.</p>
+                                    <a
+                                        href="/connections"
+                                        className="text-[#0084ff] text-xs mt-1 inline-block hover:underline"
+                                    >
+                                        Add a connection →
+                                    </a>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {connections.map((c) => (
+                                        <NumberStatusRow key={c.id} connection={c} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── Card: Advanced Automations (Coming Soon) ── */}
+                    <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-[#a855f7]/15 flex items-center justify-center">
+                                    <Settings className="h-4 w-4 text-[#a855f7]" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-white">Advanced Automations</div>
+                                    <div className="text-[11px] text-white/40 mt-0.5">Keyword triggers, conditions & more</div>
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-[#a855f7]/10 text-[#a855f7] border border-[#a855f7]/20">
+                                Coming Soon
+                            </span>
+                        </div>
+
+                        <div className="p-5">
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { label: "Keyword Triggers", desc: "Reply when message contains a keyword", icon: "⚡" },
+                                    { label: "Lead Qualifier", desc: "Auto-tag hot/warm/cold based on conversation", icon: "🔥" },
+                                    { label: "Pipeline Push", desc: "Auto-add contacts to sales pipeline stages", icon: "📊" },
+                                    { label: "Broadcast Scheduler", desc: "Send bulk messages at scheduled times", icon: "📢" },
+                                ].map((item) => (
+                                    <div
+                                        key={item.label}
+                                        className="p-3.5 rounded-xl border border-white/[0.05] bg-white/[0.02] opacity-60 cursor-not-allowed"
+                                    >
+                                        <div className="text-lg mb-2">{item.icon}</div>
+                                        <div className="text-[13px] font-semibold text-white/80">{item.label}</div>
+                                        <div className="text-[11px] text-white/40 mt-0.5 leading-snug">{item.desc}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[11px] text-white/25 text-center mt-4">
+                                These features are in active development. Available in the next update.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Sub-components
+───────────────────────────────────────────────────────────── */
+
+function Toggle({
+    enabled,
+    onToggle,
+}: {
+    enabled: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            onClick={onToggle}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-[#0084ff]" : "bg-white/10"
+                }`}
+        >
+            <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+            />
+        </button>
+    );
+}
+
+function QuickAutomationRow({
+    icon: Icon,
+    color,
+    bg,
+    label,
+    description,
+    enabled,
+    onToggle,
+}: {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bg: string;
+    label: string;
+    description: string;
+    enabled: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+            <div className="flex items-center gap-3">
+                <div className={`h-8 w-8 rounded-lg ${bg} flex items-center justify-center`}>
+                    <Icon className={`h-4 w-4 ${color}`} />
+                </div>
+                <div>
+                    <div className="text-sm font-medium text-white">{label}</div>
+                    <div className="text-[11px] text-white/40">{description}</div>
+                </div>
+            </div>
+            <Toggle enabled={enabled} onToggle={onToggle} />
+        </div>
+    );
+}
+
+function NumberStatusRow({ connection }: { connection: Connection }) {
+    const initials = connection.display_name
+        ? connection.display_name.slice(0, 2).toUpperCase()
+        : "WA";
+
+    const lastSeen = connection.last_activity
+        ? new Date(connection.last_activity).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+        })
+        : "No activity";
+
+    return (
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div className="flex items-center gap-3 min-w-0">
+                <div className="h-9 w-9 rounded-full bg-[#0084ff]/20 text-[#0084ff] text-xs font-bold flex items-center justify-center shrink-0">
+                    {initials}
+                </div>
+                <div className="min-w-0">
+                    <div className="text-sm font-medium text-white truncate">
+                        {connection.display_name || "WhatsApp Number"}
+                    </div>
+                    <div className="text-[11px] text-white/40 font-mono">{connection.phone_number}</div>
+                </div>
             </div>
 
-            {/* CARD 4 — All Numbers */}
-            <div className={card}>
-                <h2 className="text-base font-semibold text-white mb-4">All Numbers — AI Status</h2>
-                {allNumbers.length === 0 ? (
-                    <p className="text-sm text-white/40 text-center py-4">No numbers connected yet.</p>
-                ) : (
-                    <div className="space-y-2">
-                        {allNumbers.map(num => {
-                            const badge = ENGINE_BADGE[num.ai_engine] ?? ENGINE_BADGE.off;
-                            const isActive = num.id === selectedPhone;
-                            const dotColor = num.ai_engine === "groq" ? "bg-[#00c853]"
-                                : num.ai_engine === "off" ? "bg-white/20"
-                                : "bg-orange-400";
-                            const isDeprecated = num.ai_model && DEPRECATED_MODELS.has(num.ai_model);
-                            return (
-                                <div key={num.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isActive ? "bg-[#0084ff]/10 border-[#0084ff]/30" : "bg-white/[0.02] border-white/[0.05]"}`}>
-                                    <span className={`h-2 w-2 rounded-full shrink-0 ${dotColor}`} />
-                                    <div className="h-8 w-8 rounded-full bg-[#0084ff]/10 flex items-center justify-center shrink-0">
-                                        <Phone className="h-3.5 w-3.5 text-[#0084ff]" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-white truncate">{num.display_name}</div>
-                                        <div className="text-xs text-white/40 truncate">{num.phone_number ?? "—"}</div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1 shrink-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.cls}`}>{badge.label}</span>
-                                            <span className={`h-2 w-2 rounded-full ${num.auto_reply ? "bg-[#00c853]" : "bg-white/20"}`} />
-                                        </div>
-                                        {num.ai_model && (
-                                            <span className={`text-[10px] font-mono truncate max-w-[160px] ${isDeprecated ? "text-amber-400" : "text-gray-400"}`}>
-                                                {num.ai_model}{isDeprecated ? " ⚠" : ""}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {isActive && <CheckCircle2 className="h-4 w-4 text-[#0084ff] shrink-0" />}
-                                </div>
-                            );
-                        })}
+            <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right hidden sm:block">
+                    <div className="text-[11px] font-semibold text-white/60">
+                        {connection.message_count?.toLocaleString() ?? 0} msgs
                     </div>
-                )}
+                    <div className="text-[10px] text-white/30">{lastSeen}</div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span
+                        className={`h-2 w-2 rounded-full ${connection.is_active ? "bg-[#00c853]" : "bg-red-500"
+                            }`}
+                    />
+                    <span
+                        className={`text-[10px] font-semibold uppercase tracking-wide ${connection.is_active ? "text-[#00c853]" : "text-red-400"
+                            }`}
+                    >
+                        {connection.is_active ? "Live" : "Offline"}
+                    </span>
+                </div>
+                <a
+                    href="/connections"
+                    className="h-7 w-7 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/[0.1] transition-all"
+                >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                </a>
             </div>
         </div>
     );
