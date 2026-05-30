@@ -498,7 +498,7 @@ function AutomationsContent() {
                 className={`w-full h-11 rounded-xl font-semibold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2 mb-5 ${savedFlash ? "bg-[#00c853] hover:bg-[#00c853] text-white" : "bg-[#0084ff] hover:bg-[#0066cc] text-white"}`}>
                 {saving ? (<><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>)
                     : savedFlash ? (<><CheckCircle2 className="h-4 w-4" /> Saved!</>)
-                        : (<><Save className="h-4 w-4" /> Save Configuration</>)}
+                    : (<><Save className="h-4 w-4" /> Save Configuration</>)}
             </button>
 
             {/* CARD 3 — Quick Replies */}
@@ -584,7 +584,7 @@ function AutomationsContent() {
                             const isActive = num.id === selectedPhone;
                             const dotColor = num.ai_engine === "groq" ? "bg-[#00c853]"
                                 : num.ai_engine === "off" ? "bg-white/20"
-                                    : "bg-orange-400";
+                                : "bg-orange-400";
                             const isDeprecated = num.ai_model && DEPRECATED_MODELS.has(num.ai_model);
                             return (
                                 <div key={num.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isActive ? "bg-[#0084ff]/10 border-[#0084ff]/30" : "bg-white/[0.02] border-white/[0.05]"}`}>
