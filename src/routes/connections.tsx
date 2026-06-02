@@ -266,6 +266,13 @@ function ConnectionsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 space-y-8">
+      {/* Meta credentials info banner */}
+      <div className="flex items-start gap-3 rounded-xl bg-[#0084ff]/10 border border-[#0084ff]/25 px-4 py-3">
+        <AlertTriangle className="h-4 w-4 text-[#0084ff] mt-0.5 shrink-0" />
+        <p className="text-sm text-white/80">
+          <strong>Where to find your Meta credentials:</strong> Phone Number ID and WABA ID → developers.facebook.com → Your App → WhatsApp → API Setup. Permanent Access Token → Meta Business Manager → System Users → Generate Token. <span className="text-amber-300">Never use a temporary token — it expires in 24 hours.</span>
+        </p>
+      </div>
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>

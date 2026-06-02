@@ -312,6 +312,14 @@ function BroadcastsPage() {
         <AppLayout>
             <div className="min-h-screen bg-black p-6 space-y-6">
 
+                {/* Approved templates warning */}
+                <div className="flex items-start gap-3 rounded-xl bg-amber-500/10 border border-amber-500/25 px-4 py-3">
+                    <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+                    <p className="text-sm text-white/80">
+                        <strong>⚠️ Only APPROVED templates can be used for broadcasts.</strong> Sending to contacts outside the 24-hour messaging window requires a template. Check the Templates page for approval status.
+                    </p>
+                </div>
+
                 {/* ── Page header ─────────────────────────────────────────────── */}
                 <div className="flex items-center justify-between">
                     <div>
