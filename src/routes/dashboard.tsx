@@ -6,6 +6,7 @@ import { supabase, type Message } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
 import { MessageSquare, Users, Bot, Clock, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { usePhoneContext } from "@/contexts/PhoneContext";
+import { ActivityFeed } from "@/components/ActivityFeed";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Replora" }] }),
@@ -248,6 +249,11 @@ function DashboardPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Activity Feed */}
+      <div className="mt-6">
+        <ActivityFeed maxHeight={420} />
       </div>
     </div>
   );

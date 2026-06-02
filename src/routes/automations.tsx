@@ -116,6 +116,11 @@ function AutomationsPage() {
         "We are currently out of office. We will reply during business hours."
     );
 
+    /* ── Automations DB state ── */
+    const [agencyId, setAgencyId] = useState<string | null>(null);
+    const [loadingAutomations, setLoadingAutomations] = useState(true);
+    const [savingAutomations, setSavingAutomations] = useState(false);
+
     /* ── Quick Automations ── */
     const [automations, setAutomations] = useState({
         welcome: false,
@@ -132,6 +137,50 @@ function AutomationsPage() {
     /* ── Connections status ── */
     const [connections, setConnections] = useState<Connection[]>([]);
     const [loadingConns, setLoadingConns] = useState(true);
+
+    /* ─── Load agency_id ─── */
+    useEffect(() => {
+        const loadAgency = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            const { data: userData } = await supabase
+                .from("users")
+                .select("agency_id")
+                .eq("id", user.id)
+                .single();
+            if (userData?.agency_id) {
+                setAgencyId(userData.agency_id);
+            }
+        };
+        loadAgency();
+    }, []);
+
+    /* ─── Load automations from Supabase ─── */
+    useEffect(() => {
+        if (!agencyId) return;
+        const loadAutomations = async () => {
+            setLoadingAutomations(true);
+            const { data } = await supabase
+                .from("automations")
+                .select("*")
+                .eq("agency_id", agencyId)
+                .is("connection_id", null)
+                .maybeSingle();
+
+            if (data) {
+                setAutomations({
+                    welcome: data.welcome_enabled ?? false,
+                    ooo: data.ooo_enabled ?? false,
+                    followup: data.followup_enabled ?? false,
+                });
+                setOooFrom(data.ooo_from ?? "10:00 PM");
+                setOooTo(data.ooo_to ?? "09:00 AM");
+                setOooMsg(data.ooo_message ?? "We are currently out of office. We will reply during business hours.");
+            }
+            setLoadingAutomations(false);
+        };
+        loadAutomations();
+    }, [agencyId]);
 
     /* ─── Load connections ─── */
     /* ─── Load AI config + connections when selectedId changes ─── */
@@ -281,6 +330,55 @@ function AutomationsPage() {
     const handleDeleteQR = (id: string) => {
         setQuickReplies((prev) => prev.filter((r) => r.id !== id));
         toast.success("Quick reply deleted");
+    };
+
+    const handleSaveAutomations = async () => {
+        if (!agencyId) {
+            toast.error("Agency not loaded. Please refresh the page.");
+            return;
+        }
+        setSavingAutomations(true);
+        try {
+            const payload = {
+                agency_id: agencyId,
+                connection_id: null as null,
+                welcome_enabled: automations.welcome,
+                ooo_enabled: automations.ooo,
+                ooo_from: oooFrom,
+                ooo_to: oooTo,
+                ooo_message: oooMsg,
+                followup_enabled: automations.followup,
+            };
+
+            // Check if row already exists
+            const { data: existing } = await supabase
+                .from("automations")
+                .select("id")
+                .eq("agency_id", agencyId)
+                .is("connection_id", null)
+                .maybeSingle();
+
+            if (existing?.id) {
+                // Update karo
+                const { error } = await supabase
+                    .from("automations")
+                    .update(payload)
+                    .eq("id", existing.id);
+                if (error) throw error;
+            } else {
+                // Naya insert karo
+                const { error } = await supabase
+                    .from("automations")
+                    .insert(payload);
+                if (error) throw error;
+            }
+            toast.success("✅ Automations saved successfully!");
+        } catch (err) {
+            console.error("Save automations error:", err);
+            toast.error("Failed to save. Please try again.");
+        } finally {
+            setSavingAutomations(false);
+        }
     };
 
     const models =
@@ -580,6 +678,19 @@ function AutomationsPage() {
                                     setAutomations((s) => ({ ...s, followup: !s.followup }))
                                 }
                             />
+                            {/* Save Button */}
+                            <button
+                                onClick={handleSaveAutomations}
+                                disabled={savingAutomations || loadingAutomations}
+                                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#00c853]/10 hover:bg-[#00c853]/20 border border-[#00c853]/20 text-[#00c853] text-sm font-semibold transition-all disabled:opacity-50 mt-1"
+                            >
+                                {savingAutomations ? (
+                                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Save className="h-3.5 w-3.5" />
+                                )}
+                                {savingAutomations ? "Saving..." : "Save Automations"}
+                            </button>
                         </div>
                     </div>
                 </div>
