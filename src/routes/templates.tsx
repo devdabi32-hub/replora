@@ -173,6 +173,13 @@ function TemplatesPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10 space-y-8">
+      {/* WABA ID requirement banner */}
+      <div className="flex items-start gap-3 rounded-xl bg-amber-500/10 border border-amber-500/25 px-4 py-3">
+        <Clock className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+        <p className="text-sm text-white/80">
+          <strong>⚠️ Templates require WABA ID</strong> to be set on your connection. <span className="text-white/60">WABA ID ≠ Phone Number ID.</span> Find it in Meta Business Manager → WhatsApp Accounts. Template approval takes 24-48 hours.
+        </p>
+      </div>
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
