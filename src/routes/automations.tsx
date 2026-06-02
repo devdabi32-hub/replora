@@ -134,24 +134,128 @@ function AutomationsPage() {
     const [loadingConns, setLoadingConns] = useState(true);
 
     /* ─── Load connections ─── */
+    /* ─── Load AI config + connections when selectedId changes ─── */
     useEffect(() => {
         const load = async () => {
-            const { data } = await supabase
+            // Load connections list
+            const { data: connData } = await supabase
                 .from("connected_phone_numbers")
                 .select("id,display_name,phone_number,is_active,message_count,last_activity")
                 .order("connected_at", { ascending: false });
-            setConnections((data ?? []) as Connection[]);
+            setConnections((connData ?? []) as Connection[]);
             setLoadingConns(false);
+
+            // Load AI config for selected number
+            if (!selectedId) return;
+            const { data: cfg, error } = await supabase
+                .from("connected_phone_numbers")
+                .select(
+                    "ai_engine,ai_model,ai_api_key,system_prompt,auto_reply,welcome_message_enabled,out_of_office_enabled,out_of_office_start,out_of_office_end,out_of_office_text,followup_enabled"
+                )
+                .eq("id", selectedId)
+                .single();
+
+            if (error || !cfg) return;
+
+            // Map DB ai_engine → frontend Provider type
+            const providerMap: Record<string, Provider> = {
+                groq: "groq",
+                openai: "openai",
+                claude: "anthropic",
+                gemini: "gemini",
+                deepseek: "custom",
+                webhook: "custom",
+                off: "groq",
+            };
+            const provider = (providerMap[cfg.ai_engine] ?? "groq") as Provider;
+            const dbModel = cfg.ai_model ?? "";
+            const knownModels = PROVIDER_MODELS[provider] ?? [];
+            const isCustomModel = dbModel && !knownModels.includes(dbModel);
+
+            setAiConfig({
+                provider,
+                model: isCustomModel ? (knownModels[0] ?? "") : dbModel,
+                customModel: isCustomModel ? dbModel : "",
+                apiKey: cfg.ai_api_key ?? "",
+                systemPrompt: cfg.system_prompt ?? "",
+                autoReply: cfg.auto_reply ?? false,
+            });
+
+            setAutomations({
+                welcome: cfg.welcome_message_enabled ?? false,
+                ooo: cfg.out_of_office_enabled ?? false,
+                followup: cfg.followup_enabled ?? false,
+            });
+
+            // OOO times — DB stores "22:00:00", display as "10:00 PM"
+            if (cfg.out_of_office_start) {
+                const [h, m] = cfg.out_of_office_start.split(":").map(Number);
+                const d = new Date(); d.setHours(h, m);
+                setOooFrom(d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }));
+            }
+            if (cfg.out_of_office_end) {
+                const [h, m] = cfg.out_of_office_end.split(":").map(Number);
+                const d = new Date(); d.setHours(h, m);
+                setOooTo(d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }));
+            }
+            if (cfg.out_of_office_text) setOooMsg(cfg.out_of_office_text);
         };
         load();
-    }, []);
+    }, [selectedId]); // re-runs when number switcher changes
 
     /* ─── Handlers ─── */
     const handleSaveAI = async () => {
+        if (!selectedId) {
+            toast.error("No WhatsApp number selected. Select a number from the topbar first.");
+            return;
+        }
         setSavingAI(true);
-        await new Promise((r) => setTimeout(r, 600));
+
+        // Map frontend Provider → DB ai_engine value
+        const engineMap: Record<Provider, string> = {
+            groq: "groq",
+            openai: "openai",
+            anthropic: "claude",
+            gemini: "gemini",
+            mistral: "groq",   // fallback — mistral uses groq-compatible
+            ollama: "webhook", // fallback
+            custom: "groq",    // fallback
+        };
+        const aiEngine = engineMap[aiConfig.provider] ?? "off";
+        const finalModel = aiConfig.customModel.trim() || aiConfig.model;
+
+        // Convert "10:00 PM" → "22:00" for DB (time column)
+        const parseTime = (t: string): string => {
+            try {
+                const d = new Date(`1970-01-01 ${t}`);
+                return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            } catch { return t; }
+        };
+
+        const { error } = await supabase
+            .from("connected_phone_numbers")
+            .update({
+                ai_engine: aiEngine,
+                ai_model: finalModel,
+                ai_api_key: aiConfig.apiKey,
+                system_prompt: aiConfig.systemPrompt,
+                auto_reply: aiConfig.autoReply,
+                welcome_message_enabled: automations.welcome,
+                out_of_office_enabled: automations.ooo,
+                out_of_office_start: parseTime(oooFrom),
+                out_of_office_end: parseTime(oooTo),
+                out_of_office_text: oooMsg,
+                followup_enabled: automations.followup,
+            })
+            .eq("id", selectedId);
+
         setSavingAI(false);
-        toast.success("AI Engine configuration saved");
+
+        if (error) {
+            toast.error("Save failed: " + error.message);
+        } else {
+            toast.success("Configuration saved ✓");
+        }
     };
 
     const handleCopyKey = () => {
