@@ -297,8 +297,8 @@ function AIEngineTab() {
           </>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
-          <div>
+        <div className="flex items-center justify-between pt-4 border-t border-white/[0.06] min-w-0">
+          <div className="min-w-0">
             <div className="text-sm font-medium">Auto Reply</div>
             <div className="text-xs text-white/50 mt-0.5">Automatically replies to incoming messages</div>
           </div>
