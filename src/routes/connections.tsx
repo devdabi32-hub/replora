@@ -184,35 +184,67 @@ function ConnectionsPage() {
   const handleAdd = async () => {
     if (!newLabel.trim()) { toast.error("Display name required"); return; }
     if (!newPhoneId.trim()) { toast.error("Phone Number ID required"); return; }
+    if (!newAccessToken.trim()) { toast.error("Meta Access Token required"); return; }
+    if (!newWabaId.trim()) { toast.error("WhatsApp Business Account ID required"); return; }
+
+    setValidationError(null);
     setSubmitting(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    const { data: userRow } = await supabase
-      .from("users")
-      .select("agency_id")
-      .eq("id", session!.user.id)
-      .single();
-    const { data, error } = await supabase
-      .from("connected_phone_numbers")
-      .insert({
-        agency_id: userRow!.agency_id,
-        phone_number_id: newPhoneId.trim(),
-        display_name: newLabel.trim(),
-        waba_id: newWabaId.trim() || null,
-        access_token: newAccessToken.trim() || null,
-        is_active: true,
-      })
-      .select()
-      .single();
-    console.log("insert result:", data);
-    console.log("insert error:", error);
-    setSubmitting(false);
-    if (error) { alert("Error: " + error.message); return; }
-    const finalKey = (data as any)?.api_key ?? "";
-    setNewApiKey(finalKey);
-    toast.success("Connection added");
-    const aid = userRow!.agency_id;
-    if (!agencyId) setAgencyId(aid);
-    load(aid);
+
+    // Step 1: Verify Phone Number ID + Access Token with Meta Graph API
+    try {
+      const metaRes = await fetch(
+        `https://graph.facebook.com/v21.0/${newPhoneId.trim()}?fields=id,display_phone_number,verified_name`,
+        {
+          headers: { Authorization: `Bearer ${newAccessToken.trim()}` },
+        }
+      );
+      const metaData = await metaRes.json();
+      if (!metaRes.ok || metaData.error) {
+        const errMsg = metaData?.error?.message || "Invalid Phone Number ID or Access Token";
+        setValidationError(`Meta verification failed: ${errMsg}`);
+        setSubmitting(false);
+        return;
+      }
+
+      // Meta returned valid data — extract actual phone number
+      const verifiedPhone = metaData.display_phone_number || "";
+      const verifiedName = metaData.verified_name || newLabel.trim();
+
+      // Step 2: Save to Supabase (only if Meta verified successfully)
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("agency_id")
+        .eq("id", session!.user.id)
+        .single();
+
+      const { data, error } = await supabase
+        .from("connected_phone_numbers")
+        .insert({
+          agency_id: userRow!.agency_id,
+          phone_number_id: newPhoneId.trim(),
+          display_name: newLabel.trim(),
+          phone_number: verifiedPhone,
+          waba_id: newWabaId.trim(),
+          access_token: newAccessToken.trim(),
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      setSubmitting(false);
+      if (error) { toast.error("Save failed: " + error.message); return; }
+
+      const finalKey = (data as any)?.api_key ?? "";
+      setNewApiKey(finalKey);
+      toast.success("Connection verified and added ✓");
+      const aid = userRow!.agency_id;
+      if (!agencyId) setAgencyId(aid);
+      load(aid);
+    } catch (err: any) {
+      setValidationError("Network error — could not reach Meta API. Check your internet connection.");
+      setSubmitting(false);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -519,6 +551,7 @@ function ConnectionsPage() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Display Name */}
                   <div>
                     <label className="text-xs font-medium text-white/80">Display Name</label>
                     <input
@@ -528,6 +561,7 @@ function ConnectionsPage() {
                       className={`mt-1 ${inputClass}`}
                     />
                   </div>
+                  {/* Phone Number ID */}
                   <div>
                     <label className="text-xs font-medium text-white/80">Phone Number ID</label>
                     <input
@@ -537,21 +571,23 @@ function ConnectionsPage() {
                       className={`mt-1 ${inputClass}`}
                     />
                     <p className="text-[11px] text-white/40 mt-1.5">
-                      Find this in Meta Business Manager → WhatsApp → Phone Numbers
+                      Meta Business Manager → WhatsApp → Phone Numbers
                     </p>
                   </div>
+                  {/* WABA ID */}
                   <div>
                     <label className="text-xs font-medium text-white/80">WhatsApp Business Account ID (WABA ID)</label>
                     <input
                       value={newWabaId}
                       onChange={(e) => setNewWabaId(e.target.value)}
-                      placeholder="e.g. 1234567890123456"
+                      placeholder="e.g. 123456789012345"
                       className={`mt-1 ${inputClass}`}
                     />
                     <p className="text-[11px] text-white/40 mt-1.5">
-                      Found in Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
+                      Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
                     </p>
                   </div>
+                  {/* Access Token */}
                   <div>
                     <label className="text-xs font-medium text-white/80">Meta Permanent Access Token</label>
                     <div className="relative mt-1">
@@ -577,6 +613,13 @@ function ConnectionsPage() {
                       </p>
                     </div>
                   </div>
+                  {/* Validation Error */}
+                  {validationError && (
+                    <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
+                      <X className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-300">{validationError}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 mt-6">
@@ -591,7 +634,7 @@ function ConnectionsPage() {
                     disabled={submitting}
                     className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {submitting ? "Adding…" : "Add Connection"}
+                    {submitting ? "Verifying with Meta…" : "Add Connection"}
                   </button>
                 </div>
               </>

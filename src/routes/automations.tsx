@@ -329,7 +329,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   return (
     <button
       onClick={() => onChange(!on)}
-      className="relative h-6 w-11 rounded-full transition"
+      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
       style={{ background: on ? "#0084ff" : "rgba(255,255,255,0.1)" }}
     >
       <span
