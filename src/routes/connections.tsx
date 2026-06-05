@@ -58,7 +58,8 @@ function ConnectionsPage() {
   const [newPhoneId, setNewPhoneId] = useState("");
   const [newWabaId, setNewWabaId] = useState("");
   const [newAccessToken, setNewAccessToken] = useState("");
-  const [newTokenVisible, setNewTokenVisible] = useState(false);
+  const [showNewToken, setShowNewToken] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
