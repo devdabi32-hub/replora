@@ -556,23 +556,23 @@ function ConnectionsPage() {
                     <label className="text-xs font-medium text-white/80">Meta Permanent Access Token</label>
                     <div className="relative mt-1">
                       <input
-                        type={newTokenVisible ? "text" : "password"}
+                        type={showNewToken ? "text" : "password"}
                         value={newAccessToken}
                         onChange={(e) => setNewAccessToken(e.target.value)}
-                        placeholder="EAAxxxxxxxxxxxxxxxx..."
-                        className="w-full h-11 px-3 pr-10 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm"
+                        placeholder="EAAxxxxxxxxxx..."
+                        className={`${inputClass} pr-10`}
                       />
                       <button
                         type="button"
-                        onClick={() => setNewTokenVisible((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                        onClick={() => setShowNewToken(!showNewToken)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                       >
-                        {newTokenVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showNewToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 mt-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-300 mt-0.5 shrink-0" />
-                      <p className="text-[11px] text-amber-100">
+                    <div className="mt-2 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-amber-300/80">
                         Use a System User permanent token — never expires. Required for Template Builder and Human Takeover.
                       </p>
                     </div>
