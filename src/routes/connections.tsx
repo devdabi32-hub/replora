@@ -176,7 +176,8 @@ function ConnectionsPage() {
     setNewPhoneId("");
     setNewWabaId("");
     setNewAccessToken("");
-    setNewTokenVisible(false);
+    setShowNewToken(false);
+    setValidationError(null);
     setShowModal(true);
   };
 
