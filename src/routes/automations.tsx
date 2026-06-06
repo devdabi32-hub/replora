@@ -235,7 +235,7 @@ function AIEngineTab() {
             <div>
               <label className={labelCls}>Model</label>
               <select value={model} onChange={(e) => setModel(e.target.value)} className={inputCls}>
-                {MODELS[provider].map((m) => <option key={m} value={m} className="bg-[#0d0f17]">{m}</option>)}
+                {(MODELS[provider] ?? []).map((m) => <option key={m} value={m} className="bg-[#0d0f17]">{m}</option>)}
               </select>
             </div>
           )}
