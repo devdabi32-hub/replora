@@ -9,20 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ConnectionsRouteImport } from './routes/connections'
+import { Route as BroadcastsRouteImport } from './routes/broadcasts'
+import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as ApiDocsRouteImport } from './routes/api-docs'
 import { Route as ApiConfigurationRouteImport } from './routes/api-configuration'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -36,6 +52,16 @@ const SettingsRoute = SettingsRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -68,6 +94,16 @@ const ConnectionsRoute = ConnectionsRouteImport.update({
   path: '/connections',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BroadcastsRoute = BroadcastsRouteImport.update({
+  id: '/broadcasts',
+  path: '/broadcasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutomationsRoute = AutomationsRouteImport.update({
+  id: '/automations',
+  path: '/automations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDocsRoute = ApiDocsRouteImport.update({
   id: '/api-docs',
   path: '/api-docs',
@@ -94,30 +130,42 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/automations': typeof AutomationsRoute
+  '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
+  '/pipeline': typeof PipelineRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
+  '/templates': typeof TemplatesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/automations': typeof AutomationsRoute
+  '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
+  '/pipeline': typeof PipelineRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
+  '/templates': typeof TemplatesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,15 +173,21 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/api-configuration': typeof ApiConfigurationRoute
   '/api-docs': typeof ApiDocsRoute
+  '/automations': typeof AutomationsRoute
+  '/broadcasts': typeof BroadcastsRoute
   '/connections': typeof ConnectionsRoute
   '/contacts': typeof ContactsRoute
   '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
+  '/pipeline': typeof PipelineRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
+  '/templates': typeof TemplatesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,45 +196,63 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/automations'
+    | '/broadcasts'
     | '/connections'
     | '/contacts'
     | '/dashboard'
     | '/inbox'
     | '/login'
     | '/onboarding'
+    | '/partner'
+    | '/pipeline'
     | '/pricing'
     | '/settings'
     | '/signup'
+    | '/team'
+    | '/templates'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/automations'
+    | '/broadcasts'
     | '/connections'
     | '/contacts'
     | '/dashboard'
     | '/inbox'
     | '/login'
     | '/onboarding'
+    | '/partner'
+    | '/pipeline'
     | '/pricing'
     | '/settings'
     | '/signup'
+    | '/team'
+    | '/templates'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/api-configuration'
     | '/api-docs'
+    | '/automations'
+    | '/broadcasts'
     | '/connections'
     | '/contacts'
     | '/dashboard'
     | '/inbox'
     | '/login'
     | '/onboarding'
+    | '/partner'
+    | '/pipeline'
     | '/pricing'
     | '/settings'
     | '/signup'
+    | '/team'
+    | '/templates'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,19 +260,39 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ApiConfigurationRoute: typeof ApiConfigurationRoute
   ApiDocsRoute: typeof ApiDocsRoute
+  AutomationsRoute: typeof AutomationsRoute
+  BroadcastsRoute: typeof BroadcastsRoute
   ConnectionsRoute: typeof ConnectionsRoute
   ContactsRoute: typeof ContactsRoute
   DashboardRoute: typeof DashboardRoute
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  PartnerRoute: typeof PartnerRoute
+  PipelineRoute: typeof PipelineRoute
   PricingRoute: typeof PricingRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  TeamRoute: typeof TeamRoute
+  TemplatesRoute: typeof TemplatesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -220,6 +312,20 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -264,6 +370,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/broadcasts': {
+      id: '/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/broadcasts'
+      preLoaderRoute: typeof BroadcastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/automations': {
+      id: '/automations'
+      path: '/automations'
+      fullPath: '/automations'
+      preLoaderRoute: typeof AutomationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api-docs': {
       id: '/api-docs'
       path: '/api-docs'
@@ -300,15 +420,21 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ApiConfigurationRoute: ApiConfigurationRoute,
   ApiDocsRoute: ApiDocsRoute,
+  AutomationsRoute: AutomationsRoute,
+  BroadcastsRoute: BroadcastsRoute,
   ConnectionsRoute: ConnectionsRoute,
   ContactsRoute: ContactsRoute,
   DashboardRoute: DashboardRoute,
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  PartnerRoute: PartnerRoute,
+  PipelineRoute: PipelineRoute,
   PricingRoute: PricingRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  TeamRoute: TeamRoute,
+  TemplatesRoute: TemplatesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

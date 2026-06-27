@@ -3,7 +3,23 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('version:', d.get\\('version'\\)\\); print\\('exports:', list\\(d.get\\('exports',{}\\).keys\\(\\)\\)[:10]\\)\")",
+      "Bash(xargs grep -l \"vercel.*preset\\\\|preset.*vercel\")",
+      "Bash(xargs grep -l \"\\\\\"tanstack\\\\|tanstack-start\")",
+      "Bash(xargs grep -l \"start-plugin\\\\|tanstack.*start\\\\|start.*server\")",
+      "Skill(code-review)",
+      "Bash(git push *)",
+      "Bash(git restore *)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__list_deployments",
+      "mcp__claude_ai_Vercel__get_runtime_errors",
+      "Read(//c/Users/devs lappy/Downloads/**)",
+      "Bash(ls -la \"Chat Monitor Hub.zip\")",
+      "Bash(powershell *)",
+      "Bash(git reset *)",
+      "Bash(git checkout *)"
     ]
   }
 }
