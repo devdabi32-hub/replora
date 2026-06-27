@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-
-const OWNER_EMAIL = "devdabi32@gmail.com";
+import { OWNER_EMAIL, MS_PER_DAY } from "@/lib/constants";
 
 export type PlanName = "trial" | "starter" | "pro" | "growth" | "agency" | string;
 export type PlanStatus = "active" | "trialing" | "trial" | "expired" | string;
@@ -50,7 +49,7 @@ export function useAccountStatus(): AccountStatus {
 
     const { data: userRow } = await supabase
       .from("users")
-      .select("agency_id")
+      .select("agency_id, agencies(plan, plan_status, trial_ends_at, is_owner)")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -62,24 +61,18 @@ export function useAccountStatus(): AccountStatus {
     let trial_ends_at: string | null = null;
     let is_owner = false;
 
-    if (foundAgencyId) {
-      const { data: agency } = await supabase
-        .from("agencies")
-        .select("plan, plan_status, trial_ends_at, is_owner")
-        .eq("id", foundAgencyId)
-        .maybeSingle();
-
-      if (agency) {
-        plan = (agency.plan as string) ?? "trial";
-        plan_status = (agency.plan_status as string) ?? "trial";
-        trial_ends_at = (agency.trial_ends_at as string) ?? null;
-        is_owner = agency.is_owner === true;
-      }
+    type AgencyRow = { plan: string; plan_status: string; trial_ends_at: string | null; is_owner: boolean };
+    const agencyRow = userRow?.agencies as AgencyRow | null | undefined;
+    if (agencyRow) {
+      plan = agencyRow.plan ?? "trial";
+      plan_status = agencyRow.plan_status ?? "trial";
+      trial_ends_at = agencyRow.trial_ends_at ?? null;
+      is_owner = agencyRow.is_owner === true;
     }
 
     const isOwner = is_owner === true || email === OWNER_EMAIL;
     const daysLeft = trial_ends_at
-      ? Math.max(0, Math.ceil((new Date(trial_ends_at).getTime() - Date.now()) / 86400000))
+      ? Math.max(0, Math.ceil((new Date(trial_ends_at).getTime() - Date.now()) / MS_PER_DAY))
       : 0;
     const isExpired = isOwner ? false : plan_status === "expired";
 
@@ -123,14 +116,11 @@ export function useAccountStatus(): AccountStatus {
           table: "agencies",
           filter: `id=eq.${agencyId}`,
         },
-        (payload) => {
-          console.log("Plan updated via Realtime:", payload.new);
+        () => {
           load();
         }
       )
-      .subscribe((status) => {
-        console.log("Realtime status:", status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);

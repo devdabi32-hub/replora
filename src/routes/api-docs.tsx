@@ -1,97 +1,373 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { AppLayout } from "@/components/AppLayout";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
-  Copy, Check, AlertTriangle, Info, ExternalLink, Lock, Key, Zap, Bot,
-  MessageSquare, Phone, Activity, Users, GitBranch,
+  Check,
+  Copy,
+  Zap,
+  Shield,
+  Radio,
+  ArrowRight,
+  ChevronDown,
+  Menu,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/api-docs")({
-  head: () => ({ meta: [{ title: "API Documentation — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <ApiDocsPage />
-    </AppLayout>
-  ),
+  head: () => ({
+    meta: [
+      { title: "API Documentation — Replora" },
+      {
+        name: "description",
+        content:
+          "Connect n8n, Make.com, Zapier or custom code to Replora with our simple webhook API.",
+      },
+      { property: "og:title", content: "Replora API Documentation" },
+      {
+        property: "og:description",
+        content: "Webhook-based API for monitoring WhatsApp AI conversations.",
+      },
+    ],
+  }),
+  component: ApiDocsPage,
 });
 
-const WEBHOOK_URL = "https://xloppafivbvsljfxtjwh.supabase.co/functions/v1/webhook-receiver";
-const SEND_URL = "https://xloppafivbvsljfxtjwh.supabase.co/functions/v1/send-message";
+const WEBHOOK_BASE =
+  "https://xloppafivbvsljfxtjwh.supabase.co/functions/v1/webhook-receiver";
 
-const SECTIONS = [
-  { id: "start", label: "Getting Started", icon: Zap },
-  { id: "auth", label: "Authentication", icon: Lock },
-  { id: "webhook", label: "Webhook Setup (Meta)", icon: Key },
-  { id: "inbound", label: "Inbound Messages", icon: MessageSquare },
-  { id: "outbound", label: "Outbound Messages", icon: MessageSquare },
-  { id: "takeover", label: "Human Takeover", icon: Users },
-  { id: "broadcasts", label: "Broadcasts", icon: Activity },
-  { id: "templates", label: "Templates", icon: MessageSquare },
-  { id: "contacts", label: "Contacts API", icon: Users },
-  { id: "pipeline", label: "Pipeline / Deals", icon: GitBranch },
-  { id: "ai", label: "AI Engine Config", icon: Bot },
-  { id: "quick", label: "Quick Replies", icon: MessageSquare },
-  { id: "activity", label: "Activity Log", icon: Activity },
-  { id: "errors", label: "Error Codes", icon: AlertTriangle },
+type NavItem = { id: string; label: string };
+type NavGroup = { title: string; items: NavItem[] };
+
+const NAV: NavGroup[] = [
+  {
+    title: "Getting Started",
+    items: [
+      { id: "introduction", label: "Introduction" },
+      { id: "authentication", label: "Authentication" },
+      { id: "quick-start", label: "Quick Start" },
+    ],
+  },
+  {
+    title: "Webhook Setup",
+    items: [
+      { id: "webhook-overview", label: "Overview" },
+      { id: "connect-n8n", label: "Connect n8n" },
+      { id: "connect-make", label: "Connect Make.com" },
+      { id: "connect-zapier", label: "Connect Zapier" },
+      { id: "test-webhook", label: "Test your webhook" },
+      { id: "troubleshooting", label: "Troubleshooting" },
+    ],
+  },
+  {
+    title: "Message Format",
+    items: [
+      { id: "inbound-messages", label: "Inbound Messages" },
+      { id: "outbound-messages", label: "Outbound Messages" },
+      { id: "message-object", label: "Message Object" },
+    ],
+  },
+  {
+    title: "API Reference",
+    items: [
+      { id: "send-message", label: "Send Message" },
+      { id: "get-conversations", label: "Get Conversations" },
+      { id: "get-messages", label: "Get Messages" },
+      { id: "get-contacts", label: "Get Contacts" },
+    ],
+  },
+  {
+    title: "SDKs & Tools",
+    items: [
+      { id: "n8n-node", label: "n8n Node (soon)" },
+      { id: "postman", label: "Postman Collection" },
+      { id: "faq", label: "FAQ" },
+    ],
+  },
 ];
 
-function CopyBtn({ text }: { text: string }) {
-  const [done, setDone] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); }}
-      className="absolute top-2.5 right-2.5 h-7 px-2 rounded-md bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-[11px] text-white/70 flex items-center gap-1 transition"
-    >
-      {done ? <Check className="h-3 w-3 text-[#00c853]" /> : <Copy className="h-3 w-3" />}
-      {done ? "Copied" : "Copy"}
-    </button>
-  );
+function ApiDocsPage() {
+  return <DocsView />;
 }
 
-function Code({ children }: { children: string }) {
+function DocsView() {
+  const [active, setActive] = useState<string>("introduction");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const allIds = NAV.flatMap((g) => g.items.map((i) => i.id));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-80px 0px -70% 0px", threshold: 0 },
+    );
+    allIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const handleNavClick = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setMobileOpen(false);
+    }
+  };
+
   return (
-    <div className="relative my-3 group">
-      <pre className="bg-[#0d1117] border border-white/10 rounded-lg p-4 pr-20 overflow-x-auto text-[12.5px] leading-relaxed font-mono text-white/85 whitespace-pre">{children}</pre>
-      <CopyBtn text={children} />
+    <div className="min-h-screen bg-black">
+      {/* Mobile top bar */}
+      <div className="lg:hidden sticky top-0 z-30 bg-black border-b border-white/10 px-4 py-3 flex items-center justify-between">
+        <span className="font-semibold text-white">API Docs</span>
+        <button
+          onClick={() => setMobileOpen((o) => !o)}
+          className="p-2 rounded-md hover:bg-white/10 text-white"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside
+          className={`${mobileOpen ? "block" : "hidden"} lg:block fixed lg:sticky top-0 lg:top-0 left-0 lg:left-auto z-20 h-screen w-72 bg-[#1a1f2e] text-slate-300 overflow-y-auto`}
+        >
+          <div className="px-6 pt-8 pb-6 border-b border-white/[0.06]">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[#0084ff]">
+              Developer
+            </div>
+            <h2 className="text-white text-lg font-semibold mt-1">API Reference</h2>
+            <p className="text-xs text-white/50 mt-1">v1.0 · REST · Webhooks</p>
+          </div>
+          <nav className="px-3 py-5 space-y-6">
+            {NAV.map((group) => (
+              <div key={group.title}>
+                <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/60">
+                  {group.title}
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const isActive = active === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleNavClick(item.id)}
+                        className={`w-full text-left px-3 py-1.5 text-[13px] rounded-md transition-all ${
+                          isActive
+                            ? "bg-[#0084ff]/10 text-[#0084ff] font-medium border-l-2 border-[#0084ff] pl-[10px]"
+                            : "text-white/50 hover:text-white hover:bg-black/[0.03]"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="max-w-3xl mx-auto px-6 lg:px-12 py-12 space-y-20">
+            <Introduction />
+            <Authentication />
+            <QuickStart />
+            <WebhookOverview />
+            <ConnectN8n />
+            <ConnectMake />
+            <ConnectZapier />
+            <TestWebhook />
+            <Troubleshooting />
+            <InboundMessages />
+            <OutboundMessages />
+            <MessageObject />
+            <SendMessage />
+            <GetConversations />
+            <GetMessages />
+            <GetContacts />
+            <N8nNode />
+            <Postman />
+            <Faq />
+            <div className="border-t border-white/10 pt-8 text-center text-xs text-white/50">
+              Need help? Email support@replora.in
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+/* ---------- Reusable bits ---------- */
+
+function Section({
+  id,
+  eyebrow,
+  title,
+  subtitle,
+  children,
+}: {
+  id: string;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section id={id} className="scroll-mt-24 mb-16">
-      <h2 className="text-2xl font-semibold text-white mb-1.5 tracking-tight">{title}</h2>
-      <div className="text-[15px] text-white/70 leading-relaxed space-y-3">{children}</div>
+    <section id={id} className="scroll-mt-24">
+      {eyebrow && (
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-[#0084ff] mb-2">
+          {eyebrow}
+        </div>
+      )}
+      <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
+      {subtitle && <p className="mt-3 text-base text-white/70 leading-relaxed">{subtitle}</p>}
+      <div className="mt-6 space-y-5 text-[15px] text-white/80 leading-relaxed">{children}</div>
     </section>
   );
 }
 
-function Note({ kind, children }: { kind: "info" | "warn" | "danger"; children: React.ReactNode }) {
-  const cfg = {
-    info: { bg: "rgba(0,132,255,0.08)", border: "rgba(0,132,255,0.25)", color: "#0084ff", Icon: Info },
-    warn: { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.25)", color: "#f59e0b", Icon: AlertTriangle },
-    danger: { bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.25)", color: "#ef4444", Icon: AlertTriangle },
-  }[kind];
-  const Icon = cfg.Icon;
+function CodeBlock({
+  code,
+  language = "bash",
+  title,
+}: {
+  code: string;
+  language?: string;
+  title?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* noop */
+    }
+  };
   return (
-    <div className="flex gap-3 rounded-xl px-4 py-3 my-3 text-sm" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-      <Icon className="h-4 w-4 mt-0.5 shrink-0" style={{ color: cfg.color }} />
-      <div className="text-white/85">{children}</div>
+    <div className="rounded-xl overflow-hidden border border-slate-800 bg-[#0d1117] shadow-sm">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-[#161b22]">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
+          <span className="ml-3 text-[11px] font-mono text-white/50">
+            {title ?? language}
+          </span>
+        </div>
+        <button
+          onClick={copy}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-white/50 hover:text-white rounded-md hover:bg-black/[0.06] transition-all"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3.5 w-3.5 text-[#00c853]" /> Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="overflow-x-auto px-4 py-4 text-[13px] leading-relaxed font-mono text-slate-100">
+        <Highlighted code={code} language={language} />
+      </pre>
     </div>
   );
 }
 
-function Table({ headers, rows }: { headers: string[]; rows: (string | React.ReactNode)[][] }) {
+/* Lightweight syntax highlighter for json/bash/http */
+function Highlighted({ code, language }: { code: string; language: string }) {
+  if (language === "json") {
+    const html = code
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span style="color:#79c0ff">$1</span>$2')
+      .replace(/:\s*("(?:\\.|[^"\\])*")/g, ': <span style="color:#a5d6ff">$1</span>')
+      .replace(/\b(true|false|null)\b/g, '<span style="color:#ff7b72">$1</span>')
+      .replace(/\b(-?\d+(?:\.\d+)?)\b/g, '<span style="color:#f2cc60">$1</span>');
+    return <code dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+  if (language === "bash") {
+    const html = code
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/(^|\n)(\$\s.*)/g, '$1<span style="color:#7ee787">$2</span>')
+      .replace(/(curl|POST|GET|PUT|DELETE)/g, '<span style="color:#ff7b72">$1</span>')
+      .replace(/(-X|-H|-d)\b/g, '<span style="color:#d2a8ff">$1</span>')
+      .replace(/("[^"]*")/g, '<span style="color:#a5d6ff">$1</span>');
+    return <code dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+  return <code>{code}</code>;
+}
+
+function Callout({
+  variant = "info",
+  children,
+  title,
+}: {
+  variant?: "info" | "success" | "warning";
+  children: React.ReactNode;
+  title?: string;
+}) {
+  const styles = {
+    info: "bg-[#0084ff]/10 border-[#0084ff]/30 text-white/90",
+    success: "bg-[#00c853]/10 border-[#00c853]/30 text-white/90",
+    warning: "bg-amber-500/10 border-amber-500/30 text-amber-100",
+  }[variant];
   return (
-    <div className="my-4 overflow-x-auto rounded-lg border border-white/[0.08]">
+    <div className={`rounded-lg border ${styles} px-4 py-3 text-sm`}>
+      {title && <div className="font-semibold mb-1">{title}</div>}
+      <div className="leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+function ParamTable({
+  rows,
+  headers,
+}: {
+  headers: string[];
+  rows: string[][];
+}) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-white/10">
       <table className="w-full text-sm">
-        <thead className="bg-white/[0.03]">
-          <tr>{headers.map((h) => <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white/60">{h}</th>)}</tr>
+        <thead className="bg-white/5 border-b border-white/10">
+          <tr>
+            {headers.map((h) => (
+              <th
+                key={h}
+                className="px-4 py-2.5 text-left font-semibold text-white/80 text-[12px] uppercase tracking-wider"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="border-t border-white/[0.06]">
-              {row.map((c, j) => <td key={j} className="px-4 py-2.5 text-white/80 align-top">{typeof c === "string" && c.match(/^[a-z_]+$/) ? <code className="font-mono text-[12.5px] text-[#0084ff]">{c}</code> : c}</td>)}
+          {rows.map((r, i) => (
+            <tr key={i} className="border-b border-white/10 last:border-0">
+              {r.map((c, j) => (
+                <td key={j} className="px-4 py-2.5 align-top text-white/80">
+                  {j === 0 ? (
+                    <code className="text-[12.5px] font-mono text-[#0084ff] bg-[#0084ff]/15 px-1.5 py-0.5 rounded">
+                      {c}
+                    </code>
+                  ) : (
+                    <span className="text-[13px]">{c}</span>
+                  )}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
@@ -100,375 +376,704 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | React.Rea
   );
 }
 
-function StepNum({ n }: { n: number }) {
+/* ---------- Sections ---------- */
+
+function Introduction() {
   return (
-    <div className="h-7 w-7 rounded-full bg-[#0084ff] text-white text-sm font-semibold flex items-center justify-center shrink-0">{n}</div>
+    <Section
+      id="introduction"
+      eyebrow="Documentation"
+      title="Replora API Documentation"
+      subtitle="Connect any automation tool to monitor your WhatsApp AI agent conversations."
+    >
+      <p>
+        Replora provides a simple webhook-based API that lets you push WhatsApp
+        conversation data from any automation platform — n8n, Make.com, Zapier or
+        custom code — directly into your monitoring portal.
+      </p>
+      <div className="grid sm:grid-cols-3 gap-4 pt-4">
+        {[
+          {
+            icon: Zap,
+            title: "Simple REST API",
+            desc: "One endpoint. JSON in, JSON out. No SDK required.",
+          },
+          {
+            icon: Shield,
+            title: "Secure webhook auth",
+            desc: "Single Secret API key. Signed and isolated per agency.",
+          },
+          {
+            icon: Radio,
+            title: "Real-time delivery",
+            desc: "Messages appear in your inbox the moment they're posted.",
+          },
+        ].map((f) => (
+          <div
+            key={f.title}
+            className="rounded-xl border border-white/10 p-5 hover:border-[#0084ff] hover:shadow-md transition-all"
+          >
+            <div className="h-9 w-9 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center mb-3">
+              <f.icon className="h-4.5 w-4.5" />
+            </div>
+            <div className="font-semibold text-white text-[14px]">{f.title}</div>
+            <div className="text-[13px] text-white/60 mt-1 leading-relaxed">{f.desc}</div>
+          </div>
+        ))}
+      </div>
+    </Section>
   );
 }
 
-function ApiDocsPage() {
-  const [active, setActive] = useState("start");
-  const [copied, setCopied] = useState(false);
+function Authentication() {
+  return (
+    <Section
+      id="authentication"
+      eyebrow="Security"
+      title="Authentication"
+      subtitle="Replora uses a single API key to authenticate all requests. Include your Secret API Key in every request."
+    >
+      <CodeBlock
+        language="bash"
+        title="headers"
+        code={`// Only header you need
+x-wa-secret: wam_sk_your_key_here`}
+      />
+      <Callout variant="info">
+        Find your Secret API Key in <strong>Settings → API Keys</strong>. Keep it private.
+      </Callout>
+      <Link
+        to="/settings"
+        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0084ff] text-white text-sm font-medium rounded-lg hover:bg-[#0074e0] transition-colors"
+      >
+        Go to Settings <ArrowRight className="h-4 w-4" />
+      </Link>
+    </Section>
+  );
+}
 
-  const copyWebhook = () => {
-    navigator.clipboard.writeText(WEBHOOK_URL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+function QuickStart() {
+  return (
+    <Section
+      id="quick-start"
+      eyebrow="5 minutes"
+      title="Quick Start"
+      subtitle="Send your first message in under 5 minutes."
+    >
+      <ol className="space-y-3">
+        {[
+          "Get your webhook URL from Settings",
+          "Send a POST request to your webhook URL",
+          "View the message in your Inbox",
+        ].map((t, i) => (
+          <li key={i} className="flex gap-3">
+            <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[#0084ff] text-white text-xs font-bold flex items-center justify-center">
+              {i + 1}
+            </span>
+            <span className="text-[14px] text-white/80">{t}</span>
+          </li>
+        ))}
+      </ol>
+      <CodeBlock
+        language="bash"
+        title="cURL"
+        code={`curl -X POST ${WEBHOOK_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-wa-secret: wam_sk_your_key_here" \\
+  -d '{
+    "phone_number": "919876543210",
+    "message_text": "Hello! What are your prices?",
+    "direction": "inbound",
+    "sender_type": "client",
+    "timestamp": "2026-05-09T10:30:00Z"
+  }'`}
+      />
+      <div>
+        <div className="text-[12px] font-semibold uppercase tracking-wider text-[#00c853] mb-2">
+          200 OK Response
+        </div>
+        <CodeBlock
+          language="json"
+          title="response"
+          code={`{
+  "success": true
+}`}
+        />
+      </div>
+    </Section>
+  );
+}
+
+function WebhookOverview() {
+  return (
+    <Section
+      id="webhook-overview"
+      eyebrow="Webhooks"
+      title="Webhook Overview"
+      subtitle="The webhook is the single ingress point for every message — inbound from your customers and outbound from your AI."
+    >
+      <ul className="list-disc pl-5 space-y-1.5 text-[14px]">
+        <li>One stable URL per agency.</li>
+        <li>Accepts JSON via HTTPS POST only.</li>
+        <li>Returns <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 rounded">200</code> on success, <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 rounded">4xx</code> on auth or schema errors.</li>
+      </ul>
+      <CodeBlock language="bash" title="endpoint" code={`POST ${WEBHOOK_BASE}`} />
+    </Section>
+  );
+}
+
+function ConnectN8n() {
+  return (
+    <Section
+      id="connect-n8n"
+      eyebrow="Integration"
+      title="Connect n8n"
+      subtitle="Step-by-step guide to connect your n8n WhatsApp workflow."
+    >
+      <Step n={1} title="Get your Secret API Key">
+        Go to <strong>Settings → API Keys</strong> and copy your{" "}
+        <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 py-0.5 rounded">wam_sk_</code> key.
+      </Step>
+      <Step n={2} title="Add an HTTP Request node">
+        Add an <strong>HTTP Request</strong> node after your WhatsApp Trigger in n8n.
+      </Step>
+      <Step n={3} title="Configure the node">
+        <ParamTable
+          headers={["Field", "Value"]}
+          rows={[
+            ["Method", "POST"],
+            ["URL", WEBHOOK_BASE],
+          ]}
+        />
+      </Step>
+      <Step n={4} title="Add exactly 2 headers">
+        <ParamTable
+          headers={["Header Name", "Value"]}
+          rows={[
+            ["Content-Type", "application/json"],
+            ["x-wa-secret", "wam_sk_your_key_here"],
+          ]}
+        />
+      </Step>
+      <Step n={5} title="Configure Body (Using Fields Below)">
+        <ParamTable
+          headers={["Parameter", "Expression"]}
+          rows={[
+            ["phone_number", "={{ $json.messages[0].from }}"],
+            ["message_text", "={{ $json.messages[0].text.body }}"],
+            ["direction", "inbound"],
+            ["sender_type", "client"],
+            ["timestamp", "={{ new Date().toISOString() }}"],
+          ]}
+        />
+      </Step>
+      <Step n={6} title="Add Filter node after HTTP Request">
+        <ParamTable
+          headers={["Field", "Value"]}
+          rows={[
+            ["Left value", "={{ $json.messages && $json.messages[0] && $json.messages[0].type }}"],
+            ["Operator", "equals"],
+            ["Right value", "text"],
+          ]}
+        />
+      </Step>
+      <Step n={7} title="Add second HTTP Request after AI Agent">
+        Same URL and headers, different body:
+        <ParamTable
+          headers={["Parameter", "Expression"]}
+          rows={[
+            ["phone_number", "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"],
+            ["message_text", "={{ $('AI Agent').item.json.output }}"],
+            ["direction", "outbound"],
+            ["sender_type", "ai_agent"],
+            ["timestamp", "={{ new Date().toISOString() }}"],
+          ]}
+        />
+      </Step>
+      <CodeBlock
+        language="bash"
+        title="final workflow"
+        code={`WhatsApp Trigger → HTTP Request (inbound) →
+Filter → AI Agent → HTTP Request (outbound) →
+Send WhatsApp Reply`}
+      />
+    </Section>
+  );
+}
+
+function Step({
+  n,
+  title,
+  children,
+}: {
+  n: number;
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 p-5 space-y-3 hover:border-white/15 transition-colors">
+      <div className="flex items-center gap-3">
+        <span className="h-7 w-7 rounded-full bg-[#0084ff] text-white text-xs font-bold flex items-center justify-center">
+          {n}
+        </span>
+        <h3 className="font-semibold text-white text-[15px]">{title}</h3>
+      </div>
+      <div className="pl-10 text-[14px] text-white/80 space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function ConnectMake() {
+  return (
+    <Section
+      id="connect-make"
+      eyebrow="Integration"
+      title="Connect Make.com"
+      subtitle="Use the HTTP module to forward WhatsApp messages to your monitor."
+    >
+      <Step n={1} title="Add an HTTP module">
+        Place an HTTP module after your WhatsApp module (similar to n8n's HTTP Request).
+      </Step>
+      <Step n={2} title="Configure the request">
+        <ParamTable
+          headers={["Field", "Value"]}
+          rows={[
+            ["Method", "POST"],
+            ["URL", WEBHOOK_BASE],
+            ["Body type", "Raw / JSON"],
+          ]}
+        />
+      </Step>
+      <Step n={3} title="Add the same headers and body shape">
+        Match the same headers and body parameters described in the n8n section above.
+      </Step>
+    </Section>
+  );
+}
+
+function ConnectZapier() {
+  return (
+    <Section
+      id="connect-zapier"
+      eyebrow="Integration"
+      title="Connect Zapier"
+      subtitle="Use Zapier's Webhooks by Zapier action to forward messages."
+    >
+      <Step n={1} title="Add a 'Webhooks by Zapier → POST' action" />
+      <Step n={2} title="Set the URL and headers">
+        URL: <code className="font-mono text-[13px] bg-[#0B141A] text-white/90 border border-white/10 px-1.5 py-0.5 rounded break-all">{WEBHOOK_BASE}</code>
+      </Step>
+      <Step n={3} title="Map data fields from your WhatsApp trigger">
+        Match the body shape described in the Message Object section.
+      </Step>
+    </Section>
+  );
+}
+
+function TestWebhook() {
+  const [url, setUrl] = useState(WEBHOOK_BASE);
+  const [phone, setPhone] = useState("919999999999");
+  const [text, setText] = useState("This is a test message");
+  const [response, setResponse] = useState<{
+    ok: boolean;
+    body: string;
+  } | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const send = async () => {
+    setSending(true);
+    setResponse(null);
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone_number: phone,
+          message_text: text,
+          direction: "inbound",
+          sender_type: "client",
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      const body = await res.text();
+      setResponse({ ok: res.ok, body: body || `HTTP ${res.status}` });
+    } catch (e) {
+      setResponse({ ok: false, body: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white" style={{ fontFamily: "Inter, sans-serif" }}>
-      {/* Sticky webhook banner */}
-      <div className="sticky top-0 z-30 bg-[#0084ff]/15 backdrop-blur border-b border-[#0084ff]/25 px-6 py-2.5 flex items-center justify-center gap-2 text-sm">
-        <Info className="h-4 w-4 text-[#0084ff]" />
-        <span className="text-white/80">Webhook URL:</span>
-        <code className="font-mono text-[12.5px] text-white">{WEBHOOK_URL}</code>
-        <button onClick={copyWebhook} className="ml-2 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[11px] flex items-center gap-1">
-          {copied ? <Check className="h-3 w-3 text-[#00c853]" /> : <Copy className="h-3 w-3" />}
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
-
-      <div className="flex max-w-7xl mx-auto">
-        {/* Sidebar */}
-        <aside className="hidden lg:block w-[220px] shrink-0 sticky top-12 self-start h-[calc(100vh-3rem)] overflow-y-auto px-4 py-8 border-r border-white/[0.06]">
-          <div className="text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-3 px-2">On this page</div>
-          <nav className="space-y-0.5">
-            {SECTIONS.map((s) => {
-              const Icon = s.icon;
-              return (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  onClick={() => setActive(s.id)}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] transition ${
-                    active === s.id ? "bg-white/[0.06] text-white" : "text-white/55 hover:text-white hover:bg-white/[0.03]"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {s.label}
-                </a>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Content */}
-        <main className="flex-1 min-w-0 px-6 lg:px-10 py-10 max-w-3xl">
-          <Section id="start" title="Replora API — Developer Docs">
-            <p>Connect your WhatsApp AI agent to Replora in under 60 seconds.</p>
-            <Note kind="info">Replora uses a single webhook endpoint + secret key. No OAuth, no JWT, no complex auth flows.</Note>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-5">
-                <div className="text-xs font-semibold tracking-widest text-[#0084ff] uppercase mb-2">Quick Start</div>
-                <h3 className="text-base font-semibold text-white mb-3">I use n8n</h3>
-                <ol className="space-y-2 text-sm text-white/70 list-decimal pl-4">
-                  <li>Copy your <code className="font-mono text-[#0084ff]">wam_sk_</code> key from Settings → API Keys</li>
-                  <li>Add HTTP Request node</li>
-                  <li>Set <code className="font-mono">x-wa-secret</code> header</li>
-                  <li>Send message JSON</li>
-                </ol>
-                <a href="#inbound" className="mt-4 inline-flex items-center gap-1 text-sm text-[#0084ff] hover:underline">View n8n guide ↓</a>
-              </div>
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-5">
-                <div className="text-xs font-semibold tracking-widest text-[#00c853] uppercase mb-2">Quick Start</div>
-                <h3 className="text-base font-semibold text-white mb-3">I use custom code</h3>
-                <ol className="space-y-2 text-sm text-white/70 list-decimal pl-4">
-                  <li>Copy <code className="font-mono text-[#0084ff]">wam_sk_</code> key</li>
-                  <li>POST to webhook URL</li>
-                  <li>Set <code className="font-mono">x-wa-secret</code> header</li>
-                </ol>
-                <a href="#auth" className="mt-4 inline-flex items-center gap-1 text-sm text-[#0084ff] hover:underline">View curl example ↓</a>
-              </div>
-            </div>
-          </Section>
-
-          <Section id="auth" title="Authentication">
-            <p>All API requests require the <code className="font-mono text-[#0084ff]">x-wa-secret</code> header. Never use JWT tokens or the Supabase anon key — those are internal only.</p>
-            <Note kind="warn">⚠️ Never expose your <code>wam_sk_</code> key in frontend code or public repos. Treat it like a password.</Note>
-            <Table
-              headers={["Header", "Value", "Notes"]}
-              rows={[
-                [<code key="1" className="font-mono text-[#0084ff]">x-wa-secret</code>, <code key="2" className="font-mono text-[12.5px]">wam_sk_your_key_here</code>, "Required on every request"],
-                [<code key="3" className="font-mono text-[#0084ff]">Content-Type</code>, <code key="4" className="font-mono text-[12.5px]">application/json</code>, "Required"],
-              ]}
+    <Section
+      id="test-webhook"
+      eyebrow="Tools"
+      title="Test Your Webhook"
+      subtitle="Fire a test request to verify your setup end to end."
+    >
+      <div className="rounded-xl border border-white/10 p-5 space-y-4">
+        <Field label="Webhook URL">
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="w-full px-3 py-2 text-sm rounded-lg bg-[#0B141A] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none font-mono"
+          />
+        </Field>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Phone number">
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg bg-[#0B141A] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none"
             />
-            <Code>{`curl -X POST ${WEBHOOK_URL} \\
+          </Field>
+          <Field label="Message">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg bg-[#0B141A] border border-white/10 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none"
+            />
+          </Field>
+        </div>
+        <button
+          onClick={send}
+          disabled={sending}
+          className="px-4 py-2 bg-[#0084ff] text-white text-sm font-medium rounded-lg hover:bg-[#0074e0] disabled:opacity-50 transition-colors"
+        >
+          {sending ? "Sending…" : "Send Test"}
+        </button>
+        {response && (
+          <div
+            className={`rounded-lg px-4 py-3 text-sm font-mono ${
+              response.ok
+                ? "bg-[#00c853]/10 text-[#00c853] border border-[#00c853]/30"
+                : "bg-red-500/10 text-red-300 border border-red-500/30"
+            }`}
+          >
+            <div className="font-semibold text-[12px] uppercase tracking-wider mb-1">
+              {response.ok ? "Success" : "Error"}
+            </div>
+            <pre className="whitespace-pre-wrap break-words text-[12px]">{response.body}</pre>
+          </div>
+        )}
+      </div>
+      <CodeBlock
+        language="bash"
+        title="cURL"
+        code={`curl -X POST YOUR_WEBHOOK_URL \\
   -H "Content-Type: application/json" \\
   -H "x-wa-secret: wam_sk_your_key_here" \\
-  -d '{"phone_number":"919876543210","message_text":"Hello","direction":"inbound","sender_type":"client","timestamp":"2025-01-01T10:00:00Z","phone_number_id":"YOUR_META_PHONE_NUMBER_ID"}'`}</Code>
-          </Section>
+  -d '{
+    "phone_number": "919999999999",
+    "message_text": "This is a test message",
+    "direction": "inbound",
+    "sender_type": "client",
+    "timestamp": "2026-05-09T10:00:00Z"
+  }'`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="webhook" title="Webhook Setup (Meta)">
-            <p>Connecting Meta WhatsApp Business API.</p>
-            <Note kind="info">Replora works with the official Meta Cloud API. No third-party gateway.</Note>
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-[12px] font-semibold uppercase tracking-wider text-white/60 mb-1.5 block">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
 
-            <div className="space-y-6 mt-6">
-              <div className="flex gap-4"><StepNum n={1} />
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-white mb-1">Get Your Meta Credentials</h4>
-                  <p className="text-sm text-white/70">Go to developers.facebook.com → Your App → WhatsApp → API Setup</p>
-                  <Table
-                    headers={["Field", "Where to Find It", "Example Value"]}
-                    rows={[
-                      ["Phone Number ID", "WhatsApp → API Setup → Phone Number ID", <code key="a" className="font-mono text-[12.5px]">1073227029211574</code>],
-                      ["WABA ID", "WhatsApp → API Setup → WhatsApp Business Account ID", <code key="b" className="font-mono text-[12.5px]">123456789012345</code>],
-                      ["Permanent Access Token", "Business Manager → System Users → Generate Token", <code key="c" className="font-mono text-[12.5px]">EAAxxxxxxxx...</code>],
-                      ["Verify Token", "Use the fixed Replora value", <code key="d" className="font-mono text-[12.5px]">replora_meta_verify</code>],
-                    ]}
-                  />
-                  <Note kind="danger">⚠️ Do NOT use temporary tokens — they expire in 24 hours. Always generate a permanent System User token from Meta Business Manager.</Note>
-                </div>
-              </div>
-
-              <div className="flex gap-4"><StepNum n={2} />
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-white mb-1">Configure Webhook in Meta</h4>
-                  <p className="text-sm text-white/70">In developers.facebook.com → WhatsApp → Configuration → Webhook:</p>
-                  <Code>{`Callback URL: ${WEBHOOK_URL}\nVerify Token: replora_meta_verify`}</Code>
-                </div>
-              </div>
-
-              <div className="flex gap-4"><StepNum n={3} />
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-white mb-1">Subscribe to Events</h4>
-                  <p className="text-sm text-white/70">Under Webhook Fields, subscribe to: <code className="font-mono text-[#00c853]">messages</code> ✓</p>
-                  <Note kind="info">After subscribing, Meta will send a GET request to verify your webhook. Replora automatically handles this verification.</Note>
-                </div>
-              </div>
-
-              <div className="flex gap-4"><StepNum n={4} />
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-white mb-1">Add Number to Replora</h4>
-                  <p className="text-sm text-white/70">Go to Connections page → Add WhatsApp Number → Enter your Phone Number ID + Access Token + WABA ID</p>
-                  <Note kind="warn">WABA ID is different from Phone Number ID. Both are required — WABA ID is needed for Template API calls.</Note>
-                </div>
-              </div>
-
-              <div className="flex gap-4"><StepNum n={5} />
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-white mb-1">Enable AI</h4>
-                  <p className="text-sm text-white/70">Go to Automations → AI Engine → Select provider → Paste API key → Enable Auto Reply → Save</p>
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          <Section id="inbound" title="Inbound Messages (PATH A — Meta Native)">
-            <p>Replora receives messages directly from Meta. You do NOT need to forward them manually if using Meta webhooks.</p>
-            <p className="mt-3 font-semibold text-white">PATH B — Custom n8n flow:</p>
-            <p>POST to webhook URL with body:</p>
-            <Table
-              headers={["Field", "Type", "Required", "Description"]}
-              rows={[
-                ["phone_number", "string", "✓", "Customer's WhatsApp number with country code (e.g. 919876543210)"],
-                ["message_text", "string", "✓", "The text content of the message"],
-                ["direction", "string", "✓", `Must be "inbound"`],
-                ["sender_type", "string", "✓", `Must be "client"`],
-                ["timestamp", "ISO string", "✓", "Message timestamp in ISO 8601 format"],
-                ["phone_number_id", "string", "✓", "Your Meta Phone Number ID — used to identify which connection"],
-              ]}
-            />
-            <Code>{`{
-  "phone_number": "={{ $json.messages[0].from }}",
-  "message_text": "={{ $json.messages[0].text.body }}",
+function InboundMessages() {
+  return (
+    <Section
+      id="inbound-messages"
+      eyebrow="Format"
+      title="Inbound Messages"
+      subtitle="Messages received from your customer's WhatsApp."
+    >
+      <CodeBlock
+        language="json"
+        title="inbound payload"
+        code={`{
+  "phone_number": "919876543210",
+  "message_text": "Hi, I'm interested in your service",
   "direction": "inbound",
   "sender_type": "client",
-  "timestamp": "={{ new Date().toISOString() }}",
-  "phone_number_id": "={{ $json.metadata.phone_number_id }}"
-}`}</Code>
-          </Section>
+  "timestamp": "2026-05-09T10:30:00Z"
+}`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="outbound" title="Outbound Messages (PATH B — n8n)">
-            <p>After your AI agent generates a reply, send the outbound message to Replora to save it in the inbox.</p>
-            <Table
-              headers={["Field", "Value"]}
-              rows={[
-                ["direction", `"outbound"`],
-                ["sender_type", `"ai_agent"`],
-                ["phone_number", "Customer's WhatsApp number"],
-                ["message_text", "AI's generated reply"],
-                ["phone_number_id", "Your Meta Phone Number ID"],
-              ]}
-            />
-            <Code>{`{
-  "phone_number": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
-  "message_text": "={{ $('AI Agent').item.json.output }}",
+function OutboundMessages() {
+  return (
+    <Section
+      id="outbound-messages"
+      eyebrow="Format"
+      title="Outbound Messages"
+      subtitle="Messages your AI agent sends back to the customer."
+    >
+      <CodeBlock
+        language="json"
+        title="outbound payload"
+        code={`{
+  "phone_number": "919876543210",
+  "message_text": "Sure! Here are our pricing plans...",
   "direction": "outbound",
   "sender_type": "ai_agent",
-  "timestamp": "={{ new Date().toISOString() }}",
-  "phone_number_id": "={{ $('WhatsApp Trigger').item.json.metadata.phone_number_id }}"
-}`}</Code>
-            <Note kind="info">If you use Replora's built-in AI Engine (Automations → AI Engine), outbound messages are saved automatically. You only need this for custom n8n flows.</Note>
-          </Section>
+  "timestamp": "2026-05-09T10:30:05Z"
+}`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="takeover" title="Human Takeover">
-            <p>Replora supports human agents taking over AI conversations directly from the inbox.</p>
-            <ol className="list-decimal pl-5 space-y-1.5 text-white/80 text-sm">
-              <li>Agent clicks <strong>"Take Over"</strong> button in inbox → sets <code className="font-mono text-[#0084ff]">conversations.human_takeover = true</code></li>
-              <li>AI stops replying to this conversation automatically</li>
-              <li>Agent types reply in message composer → Replora sends it via Meta Graph API</li>
-              <li>Agent clicks <strong>"Handback to AI"</strong> to resume AI replies</li>
-            </ol>
-            <Table
-              headers={["Requirement", "Notes"]}
-              rows={[
-                ["access_token", "Must be set on connected_phone_numbers — permanent token from Meta Business Manager"],
-                ["phone_number_id", "Must match your Meta Phone Number ID"],
-                ["Endpoint", <code key="x" className="font-mono text-[12px]">{SEND_URL}</code>],
-              ]}
-            />
-          </Section>
+function MessageObject() {
+  return (
+    <Section
+      id="message-object"
+      eyebrow="Schema"
+      title="Message Object"
+      subtitle="Every stored message has the following shape."
+    >
+      <CodeBlock
+        language="json"
+        title="message"
+        code={`{
+  "id": "uuid",
+  "agency_id": "uuid",
+  "phone_number": "919876543210",
+  "message_text": "Hello! What are your prices?",
+  "direction": "inbound",
+  "sender_type": "client",
+  "timestamp": "2026-05-09T10:30:00Z",
+  "is_read": false,
+  "lead_category": "hot",
+  "sentiment": "positive"
+}`}
+      />
+      <ParamTable
+        headers={["Field", "Type", "Description"]}
+        rows={[
+          ["phone_number", "string", "WhatsApp number with country code"],
+          ["message_text", "string", "The message content"],
+          ["direction", "string", '"inbound" or "outbound"'],
+          ["sender_type", "string", '"client" or "ai_agent"'],
+          ["timestamp", "string", "ISO 8601 datetime"],
+        ]}
+      />
+    </Section>
+  );
+}
 
-          <Section id="broadcasts" title="Broadcasts">
-            <p>Send bulk WhatsApp messages using Meta-approved templates.</p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>Template must be APPROVED by Meta before use</li>
-              <li>Templates are created in Templates page → synced from Meta</li>
-              <li>Broadcasts use the <code className="font-mono text-[#0084ff]">send-broadcast</code> edge function</li>
-            </ul>
-            <Note kind="warn">⚠️ Only APPROVED templates can be sent. PENDING or REJECTED templates will fail. Template approval takes 24-48 hours from Meta.</Note>
-            <Table
-              headers={["Field", "Description"]}
-              rows={[
-                ["template_name", "Name of approved template"],
-                ["template_language", "Default: en_US"],
-                ["connection_id", "ID of connected_phone_numbers row"],
-                ["contacts", "Array of phone numbers to send to"],
-              ]}
-            />
-            <p className="text-sm text-white/70">Status flow: <code className="font-mono">draft</code> → <code className="font-mono">sending</code> → <code className="font-mono">sent</code> / <code className="font-mono">failed</code> / <code className="font-mono">paused</code></p>
-            <p className="text-sm text-white/70 mt-2">Meta sends delivery status updates automatically. Replora updates <code className="font-mono text-[#0084ff]">broadcast_recipients</code> with <code>delivered_at</code> and <code>read_at</code> timestamps.</p>
-          </Section>
+function SendMessage() {
+  return (
+    <Section
+      id="send-message"
+      eyebrow="Endpoint"
+      title="Send Message"
+      subtitle="POST a message into the monitor."
+    >
+      <CodeBlock language="bash" title="POST" code={`POST ${WEBHOOK_BASE}`} />
+      <CodeBlock
+        language="json"
+        title="body"
+        code={`{
+  "phone_number": "919876543210",
+  "message_text": "Hello",
+  "direction": "inbound",
+  "sender_type": "client",
+  "timestamp": "2026-05-09T10:30:00Z"
+}`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="templates" title="Templates">
-            <p>Create and manage Meta WhatsApp Business message templates.</p>
-            <Table
-              headers={["Concept", "Values"]}
-              rows={[
-                ["Categories", "MARKETING, UTILITY, AUTHENTICATION"],
-                ["Header types", "TEXT, IMAGE, VIDEO, DOCUMENT, NONE"],
-                ["Status flow", "PENDING → APPROVED / REJECTED / IN_APPEAL"],
-              ]}
-            />
-            <Note kind="danger">⚠️ Templates cannot contain promotional content claiming to be from Meta or WhatsApp. Violating templates will be permanently rejected.</Note>
-            <Note kind="warn">WABA ID required: Template creation requires your WABA ID (WhatsApp Business Account ID). Set it in Connections → Edit → WABA ID field.</Note>
-          </Section>
+function GetConversations() {
+  return (
+    <Section
+      id="get-conversations"
+      eyebrow="Endpoint"
+      title="Get Conversations"
+      subtitle="List unique conversations for your agency."
+    >
+      <CodeBlock
+        language="bash"
+        title="GET"
+        code={`GET https://xloppafivbvsljfxtjwh.supabase.co/rest/v1/conversations`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="contacts" title="Contacts API">
-            <p>Contacts are automatically created when a new phone number sends your first message.</p>
-            <Table
-              headers={["Field", "Type", "Notes"]}
-              rows={[
-                ["phone_number", "auto", "From inbound message"],
-                ["agency_id", "auto", "Scoped per agency"],
-                ["created_at", "auto", "Timestamp"],
-                ["total_messages", "auto", "Incremented on each message"],
-                ["last_seen", "auto", "Updated on inbound"],
-                ["name", "manual", "Editable from Contacts page"],
-              ]}
-            />
-            <p className="text-sm text-white/70">CSV Import: Use Contacts → Import CSV to bulk import contacts. Required columns: <code className="font-mono text-[#0084ff]">phone_number</code>. Optional: <code className="font-mono text-[#0084ff]">name</code>.</p>
-          </Section>
+function GetMessages() {
+  return (
+    <Section
+      id="get-messages"
+      eyebrow="Endpoint"
+      title="Get Messages"
+      subtitle="Retrieve all messages for a phone number."
+    >
+      <CodeBlock
+        language="bash"
+        title="GET"
+        code={`GET https://xloppafivbvsljfxtjwh.supabase.co/rest/v1/messages?phone_number=eq.919876543210`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="pipeline" title="Pipeline / Deals">
-            <p>Track sales opportunities from WhatsApp conversations.</p>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              <li>Default stages: <code className="font-mono">New Lead</code> → <code className="font-mono">Qualified</code> → <code className="font-mono">Proposal</code> → <code className="font-mono">Won / Lost</code></li>
-              <li>Deals table: <code className="font-mono">title, value, stage, contact_id, notes</code></li>
-              <li>Pipeline stages fully customizable per agency (<code className="font-mono text-[#0084ff]">pipeline_stages</code> table)</li>
-              <li>"Add to Pipeline" button appears on Contact profile page</li>
-            </ul>
-          </Section>
+function GetContacts() {
+  return (
+    <Section
+      id="get-contacts"
+      eyebrow="Endpoint"
+      title="Get Contacts"
+      subtitle="List all unique contacts that have ever messaged you."
+    >
+      <CodeBlock
+        language="bash"
+        title="GET"
+        code={`GET https://xloppafivbvsljfxtjwh.supabase.co/rest/v1/contacts`}
+      />
+    </Section>
+  );
+}
 
-          <Section id="ai" title="AI Engine Config">
-            <p>Configure a separate AI engine for each connected WhatsApp number. Stored in <code className="font-mono text-[#0084ff]">connected_phone_numbers</code> table per row.</p>
-            <Table
-              headers={["Field", "Type", "Description"]}
-              rows={[
-                ["ai_engine", "enum", "gemini / openai / deepseek / groq / claude / webhook / off"],
-                ["ai_model", "text", "Model name e.g. llama-3.1-8b-instant"],
-                ["ai_api_key", "text", "Your LLM provider API key — stored securely"],
-                ["system_prompt", "text", "AI personality and instructions"],
-                ["auto_reply", "boolean", "When true, AI replies automatically to every inbound message"],
-                ["webhook_url", "text", "For ai_engine=webhook — POST target URL (n8n etc)"],
-                ["welcome_message_enabled", "boolean", "Send welcome message to new contacts"],
-                ["out_of_office_enabled", "boolean", "Auto-reply outside business hours"],
-                ["followup_enabled", "boolean", "Follow-up after 24hr no reply"],
-              ]}
-            />
-            <h4 className="text-base font-semibold text-white mt-5 mb-1">Supported providers</h4>
-            <Table
-              headers={["Provider", "Free Tier", "Recommended Model", "Get Key"]}
-              rows={[
-                ["Groq", "✓ 14,400 req/day", <code key="1" className="font-mono text-[12.5px]">llama-3.1-8b-instant</code>, <a key="1a" href="https://console.groq.com/keys" className="text-[#0084ff] hover:underline inline-flex items-center gap-1">console.groq.com <ExternalLink className="h-3 w-3" /></a>],
-                ["Google Gemini", "✓ 1,500 req/day", <code key="2" className="font-mono text-[12.5px]">gemini-2.0-flash</code>, <a key="2a" href="https://aistudio.google.com/app/apikey" className="text-[#0084ff] hover:underline inline-flex items-center gap-1">aistudio.google.com <ExternalLink className="h-3 w-3" /></a>],
-                ["OpenAI", "✗ Paid", <code key="3" className="font-mono text-[12.5px]">gpt-4o-mini</code>, <a key="3a" href="https://platform.openai.com/api-keys" className="text-[#0084ff] hover:underline inline-flex items-center gap-1">platform.openai.com <ExternalLink className="h-3 w-3" /></a>],
-                ["DeepSeek", "Limited", <code key="4" className="font-mono text-[12.5px]">deepseek-chat</code>, <a key="4a" href="https://platform.deepseek.com/api_keys" className="text-[#0084ff] hover:underline inline-flex items-center gap-1">platform.deepseek.com <ExternalLink className="h-3 w-3" /></a>],
-                ["Anthropic Claude", "✗ Paid", <code key="5" className="font-mono text-[12.5px]">claude-3-haiku</code>, <a key="5a" href="https://console.anthropic.com/settings/keys" className="text-[#0084ff] hover:underline inline-flex items-center gap-1">console.anthropic.com <ExternalLink className="h-3 w-3" /></a>],
-                ["Custom Webhook", "n/a", "—", "Your n8n URL"],
-              ]}
-            />
-          </Section>
+function N8nNode() {
+  return (
+    <Section
+      id="n8n-node"
+      eyebrow="SDKs & Tools"
+      title="n8n Node"
+      subtitle="A native n8n community node — coming soon."
+    >
+      <Callout variant="info">
+        We're building a one-click Replora node for n8n. Want early access?
+        Email <strong>support@replora.in</strong>.
+      </Callout>
+    </Section>
+  );
+}
 
-          <Section id="quick" title="Quick Replies">
-            <p>Save canned responses and trigger them with <code className="font-mono text-[#0084ff]">/shortcut</code> in the inbox.</p>
-            <Table
-              headers={["Field", "Description"]}
-              rows={[
-                ["shortcut", "e.g. /pricing"],
-                ["message", "Full text to insert"],
-              ]}
-            />
-            <p className="text-sm text-white/70">Stored in <code className="font-mono text-[#0084ff]">quick_replies</code> table, scoped to agency_id. Usage: In inbox message composer, type <code className="font-mono">/</code> to see popup of matching shortcuts.</p>
-          </Section>
+function Postman() {
+  return (
+    <Section
+      id="postman"
+      eyebrow="SDKs & Tools"
+      title="Postman Collection"
+      subtitle="Pre-built requests for every endpoint, ready to import."
+    >
+      <a
+        href="#"
+        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0084ff] text-white text-sm font-medium rounded-lg hover:bg-[#0074e0] transition-colors"
+      >
+        Download Collection <ArrowRight className="h-4 w-4" />
+      </a>
+    </Section>
+  );
+}
 
-          <Section id="activity" title="Activity Log">
-            <p>Replora auto-logs all key events for your agency.</p>
-            <Table
-              headers={["Event", "Trigger", "Description"]}
-              rows={[
-                ["message_received", "New inbound message", "Contact sent a message"],
-                ["ai_replied", "AI sends outbound", "AI agent responded"],
-                ["message_sent", "Human sends outbound", "Human agent replied"],
-                ["lead_tagged", "lead_category set", "Message tagged hot/warm/cold"],
-                ["conversation_open", "New conversation", "First message from contact"],
-                ["human_takeover", "Toggle activated", "Agent took over conversation"],
-                ["conversation_closed", "Status = closed", "Conversation marked done"],
-                ["deal_created", "New deal", "Added to pipeline"],
-                ["deal_moved", "Stage changed", "Deal moved to new stage"],
-              ]}
-            />
-            <p className="text-sm text-white/70">Activity Feed visible on Dashboard page (bottom panel).</p>
-          </Section>
-
-          <Section id="errors" title="Error Codes">
-            <Table
-              headers={["Code", "Meaning", "Fix"]}
-              rows={[
-                ["401", "Invalid or missing x-wa-secret", "Check your wam_sk_ key in Settings → API Keys"],
-                ["404", "Phone number ID not found", "Ensure phone_number_id matches a connected number"],
-                ["429", "AI provider rate limit", "Upgrade your LLM plan or switch to Groq free tier"],
-                ["500", "Edge function error", "Check Supabase → Functions → webhook-receiver → Logs"],
-              ]}
-            />
-            <h4 className="text-base font-semibold text-white mt-5 mb-1">Meta-specific errors</h4>
-            <Table
-              headers={["Meta Code", "Meaning"]}
-              rows={[
-                ["131047", "Message failed — 24hr window expired (use template)"],
-                ["131026", "Phone number not on WhatsApp"],
-                ["100", "Invalid phone_number_id — check Meta dashboard"],
-              ]}
-            />
-          </Section>
-
-          <div className="mt-16 pt-6 border-t border-white/[0.06] text-center text-xs text-white/40">
-            Need help? <a href="mailto:care@replora.in" className="text-[#0084ff] hover:underline">care@replora.in</a> • <Phone className="h-3 w-3 inline" /> WhatsApp <a href="https://wa.me/919589568529" className="text-[#0084ff] hover:underline">+91 95895 68529</a>
-          </div>
-        </main>
+function Faq() {
+  const items = [
+    {
+      q: "Can I send images or files?",
+      a: "Currently Replora supports text messages only. Image support is coming soon.",
+    },
+    {
+      q: "How many messages can I send per second?",
+      a: "The webhook accepts up to 100 requests per second.",
+    },
+    {
+      q: "What happens if my webhook request fails?",
+      a: "Replora returns appropriate HTTP status codes. Implement retry logic in your n8n workflow.",
+    },
+    {
+      q: "Is the webhook URL permanent?",
+      a: "Yes. Your webhook URL never changes unless you regenerate your secret key.",
+    },
+  ];
+  return (
+    <Section id="faq" eyebrow="Help" title="Frequently Asked Questions">
+      <div className="space-y-2">
+        {items.map((it) => (
+          <FaqItem key={it.q} q={it.q} a={it.a} />
+        ))}
       </div>
+    </Section>
+  );
+}
+
+function Troubleshooting() {
+  const items = [
+    {
+      err: "401 Invalid API key",
+      fix: "Check your x-wa-secret header contains your full key starting with wam_sk_",
+    },
+    {
+      err: "Messages not in inbox",
+      fix: "Verify your Secret API Key in Settings matches what you put in n8n.",
+    },
+    {
+      err: "Expressions showing as text",
+      fix: "Click the fx icon on value fields in n8n to enable expression mode.",
+    },
+    {
+      err: "Workflow runs multiple times",
+      fix: "Add a Filter node — WhatsApp sends delivery receipts that trigger multiple executions.",
+    },
+  ];
+  return (
+    <Section
+      id="troubleshooting"
+      eyebrow="Help"
+      title="Troubleshooting"
+      subtitle="Common issues and how to fix them."
+    >
+      <div className="space-y-3">
+        {items.map((it) => (
+          <div
+            key={it.err}
+            className="rounded-xl border border-white/10 p-4 hover:border-white/15 transition-colors"
+          >
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/30">
+                Error
+              </span>
+              <div className="font-semibold text-white text-[14px]">{it.err}</div>
+            </div>
+            <div className="mt-2 flex items-start gap-2">
+              <Check className="h-4 w-4 text-[#00c853] mt-0.5 shrink-0" />
+              <div className="text-[14px] text-white/80">{it.fix}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-white/10 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
+      >
+        <span className="font-medium text-white text-[14px]">{q}</span>
+        <ChevronDown
+          className={`h-4 w-4 text-white/50 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 text-[14px] text-white/70 leading-relaxed">{a}</div>
+      )}
     </div>
   );
 }

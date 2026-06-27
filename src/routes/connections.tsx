@@ -1,21 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/lib/supabase";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
   Phone, Plus, X, Eye, EyeOff, Copy, Check,
-  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight, Pencil,
+  AlertTriangle, Wifi, Sparkles, Trash2, ArrowUpRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/connections")({
   head: () => ({ meta: [{ title: "Connections — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <ConnectionsPage />
-    </AppLayout>
-  ),
+  component: ConnectionsPage,
 });
 
 type Connection = {
@@ -24,8 +19,6 @@ type Connection = {
   label: string;
   phone_number: string;
   api_key: string | null;
-  access_token: string | null;
-  waba_id: string | null;
   created_at: string;
   is_active: boolean;
 };
@@ -56,10 +49,6 @@ function ConnectionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newPhoneId, setNewPhoneId] = useState("");
-  const [newWabaId, setNewWabaId] = useState("");
-  const [newAccessToken, setNewAccessToken] = useState("");
-  const [showNewToken, setShowNewToken] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
@@ -69,19 +58,13 @@ function ConnectionsPage() {
   const [deleting, setDeleting] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [addonNumbers, setAddonNumbers] = useState(0);
-  const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
-  const [editLabel, setEditLabel] = useState("");
-  const [editAccessToken, setEditAccessToken] = useState("");
-  const [editWabaId, setEditWabaId] = useState("");
-  const [editTokenVisible, setEditTokenVisible] = useState(false);
-  const [savingEdit, setSavingEdit] = useState(false);
 
   const basePlanLimit = PLAN_LIMITS[plan] ?? 1;
   const limit = isOwner
     ? Infinity
     : basePlanLimit === Infinity
-      ? Infinity
-      : basePlanLimit + addonNumbers;
+    ? Infinity
+    : basePlanLimit + addonNumbers;
   const atLimit = !isOwner && connections.length >= limit;
   const extraPriceMap: Record<string, number> = { starter: 499, pro: 399, growth: 299 };
   const extraPrice = extraPriceMap[plan];
@@ -110,19 +93,14 @@ function ConnectionsPage() {
   const load = async (aid: string) => {
     const { data: rows, error } = await supabase
       .from("connected_phone_numbers")
-      .select("id, display_name, phone_number_id, api_key, access_token, waba_id, message_count, connected_at, is_active")
+      .select("id, display_name, phone_number_id, api_key, message_count, connected_at, is_active")
       .eq("agency_id", aid);
-    console.log("agencyId:", aid);
-    console.log("connections:", rows);
-    console.log("error:", error);
     const mapped: Connection[] = (rows ?? []).map((r: any) => ({
       id: r.id,
       agency_id: aid,
       label: r.display_name,
       phone_number: r.phone_number_id,
       api_key: r.api_key,
-      access_token: r.access_token,
-      waba_id: r.waba_id ?? null,
       created_at: r.connected_at,
       is_active: r.is_active,
     }));
@@ -174,77 +152,37 @@ function ConnectionsPage() {
     setNewApiKey(null);
     setNewLabel("");
     setNewPhoneId("");
-    setNewWabaId("");
-    setNewAccessToken("");
-    setShowNewToken(false);
-    setValidationError(null);
     setShowModal(true);
   };
 
   const handleAdd = async () => {
     if (!newLabel.trim()) { toast.error("Display name required"); return; }
     if (!newPhoneId.trim()) { toast.error("Phone Number ID required"); return; }
-    if (!newAccessToken.trim()) { toast.error("Meta Access Token required"); return; }
-    if (!newWabaId.trim()) { toast.error("WhatsApp Business Account ID required"); return; }
-
-    setValidationError(null);
     setSubmitting(true);
-
-    // Step 1: Verify Phone Number ID + Access Token with Meta Graph API
-    try {
-      const metaRes = await fetch(
-        `https://graph.facebook.com/v21.0/${newPhoneId.trim()}?fields=id,display_phone_number,verified_name`,
-        {
-          headers: { Authorization: `Bearer ${newAccessToken.trim()}` },
-        }
-      );
-      const metaData = await metaRes.json();
-      if (!metaRes.ok || metaData.error) {
-        const errMsg = metaData?.error?.message || "Invalid Phone Number ID or Access Token";
-        setValidationError(`Meta verification failed: ${errMsg}`);
-        setSubmitting(false);
-        return;
-      }
-
-      // Meta returned valid data — extract actual phone number
-      const verifiedPhone = metaData.display_phone_number || "";
-      const verifiedName = metaData.verified_name || newLabel.trim();
-
-      // Step 2: Save to Supabase (only if Meta verified successfully)
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: userRow } = await supabase
-        .from("users")
-        .select("agency_id")
-        .eq("id", session!.user.id)
-        .single();
-
-      const { data, error } = await supabase
-        .from("connected_phone_numbers")
-        .insert({
-          agency_id: userRow!.agency_id,
-          phone_number_id: newPhoneId.trim(),
-          display_name: newLabel.trim(),
-          phone_number: verifiedPhone,
-          waba_id: newWabaId.trim(),
-          access_token: newAccessToken.trim(),
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      setSubmitting(false);
-      if (error) { toast.error("Save failed: " + error.message); return; }
-
-      const finalKey = (data as any)?.api_key ?? "";
-      setNewApiKey(finalKey);
-      toast.success("Connection verified and added ✓");
-      const aid = userRow!.agency_id;
-      if (!agencyId) setAgencyId(aid);
-      load(aid);
-    } catch (err: any) {
-      setValidationError("Network error — could not reach Meta API. Check your internet connection.");
-      setSubmitting(false);
-    }
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("agency_id")
+      .eq("id", session!.user.id)
+      .single();
+    const { data, error } = await supabase
+      .from("connected_phone_numbers")
+      .insert({
+        agency_id: userRow!.agency_id,
+        phone_number_id: newPhoneId.trim(),
+        display_name: newLabel.trim(),
+        is_active: true,
+      })
+      .select()
+      .single();
+    setSubmitting(false);
+    if (error) { alert("Error: " + error.message); return; }
+    const finalKey = (data as any)?.api_key ?? "";
+    setNewApiKey(finalKey);
+    toast.success("Connection added");
+    const aid = userRow!.agency_id;
+    if (!agencyId) setAgencyId(aid);
+    load(aid);
   };
 
   const handleConfirmDelete = async () => {
@@ -259,24 +197,6 @@ function ConnectionsPage() {
     setConfirmDelete(null);
     toast.success("Connection deleted");
     load(agencyId);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingConnection) return;
-    setSavingEdit(true);
-    const { error } = await supabase
-      .from("connected_phone_numbers")
-      .update({
-        display_name: editLabel.trim(),
-        access_token: editAccessToken.trim() || null,
-        waba_id: editWabaId.trim() || null,
-      })
-      .eq("id", editingConnection.id);
-    setSavingEdit(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Connection updated");
-    setEditingConnection(null);
-    if (agencyId) load(agencyId);
   };
 
   const toggleVisible = (id: string) =>
@@ -300,13 +220,6 @@ function ConnectionsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 space-y-8">
-      {/* Meta credentials info banner */}
-      <div className="flex items-start gap-3 rounded-xl bg-[#0084ff]/10 border border-[#0084ff]/25 px-4 py-3">
-        <AlertTriangle className="h-4 w-4 text-[#0084ff] mt-0.5 shrink-0" />
-        <p className="text-sm text-white/80">
-          <strong>Where to find your Meta credentials:</strong> Phone Number ID and WABA ID → developers.facebook.com → Your App → WhatsApp → API Setup. Permanent Access Token → Meta Business Manager → System Users → Generate Token. <span className="text-amber-300">Never use a temporary token — it expires in 24 hours.</span>
-        </p>
-      </div>
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
@@ -348,12 +261,13 @@ function ConnectionsPage() {
         {limit !== Infinity && (
           <div className="h-2 rounded-full bg-white/10 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${barPercent >= 100
+              className={`h-full rounded-full transition-all ${
+                barPercent >= 100
                   ? "bg-red-500"
                   : barPercent >= 80
-                    ? "bg-amber-400"
-                    : "bg-[#0084ff]"
-                }`}
+                  ? "bg-amber-400"
+                  : "bg-[#0084ff]"
+              }`}
               style={{ width: `${barPercent}%` }}
             />
           </div>
@@ -415,13 +329,6 @@ function ConnectionsPage() {
                   <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#00c853]/15 text-[#00c853] border border-[#00c853]/30">
                     Active
                   </span>
-                  <button
-                    onClick={() => { setEditingConnection(c); setEditLabel(c.label); setEditAccessToken(c.access_token ?? ""); setEditWabaId(c.waba_id ?? ""); setEditTokenVisible(false); }}
-                    className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white border border-white/10 transition-colors"
-                    title="Edit connection"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
                   <button
                     onClick={() => setConfirmDelete(c)}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
@@ -551,7 +458,6 @@ function ConnectionsPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Display Name */}
                   <div>
                     <label className="text-xs font-medium text-white/80">Display Name</label>
                     <input
@@ -561,7 +467,6 @@ function ConnectionsPage() {
                       className={`mt-1 ${inputClass}`}
                     />
                   </div>
-                  {/* Phone Number ID */}
                   <div>
                     <label className="text-xs font-medium text-white/80">Phone Number ID</label>
                     <input
@@ -571,55 +476,9 @@ function ConnectionsPage() {
                       className={`mt-1 ${inputClass}`}
                     />
                     <p className="text-[11px] text-white/40 mt-1.5">
-                      Meta Business Manager → WhatsApp → Phone Numbers
+                      Find this in Meta Business Manager → WhatsApp → Phone Numbers
                     </p>
                   </div>
-                  {/* WABA ID */}
-                  <div>
-                    <label className="text-xs font-medium text-white/80">WhatsApp Business Account ID (WABA ID)</label>
-                    <input
-                      value={newWabaId}
-                      onChange={(e) => setNewWabaId(e.target.value)}
-                      placeholder="e.g. 123456789012345"
-                      className={`mt-1 ${inputClass}`}
-                    />
-                    <p className="text-[11px] text-white/40 mt-1.5">
-                      Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
-                    </p>
-                  </div>
-                  {/* Access Token */}
-                  <div>
-                    <label className="text-xs font-medium text-white/80">Meta Permanent Access Token</label>
-                    <div className="relative mt-1">
-                      <input
-                        type={showNewToken ? "text" : "password"}
-                        value={newAccessToken}
-                        onChange={(e) => setNewAccessToken(e.target.value)}
-                        placeholder="EAAxxxxxxxxxx..."
-                        className={`${inputClass} pr-10`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewToken(!showNewToken)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                      >
-                        {showNewToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <div className="mt-2 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-amber-300/80">
-                        Use a System User permanent token — never expires. Required for Template Builder and Human Takeover.
-                      </p>
-                    </div>
-                  </div>
-                  {/* Validation Error */}
-                  {validationError && (
-                    <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
-                      <X className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-red-300">{validationError}</p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-3 mt-6">
@@ -634,103 +493,11 @@ function ConnectionsPage() {
                     disabled={submitting}
                     className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {submitting ? "Verifying with Meta…" : "Add Connection"}
+                    {submitting ? "Adding…" : "Add Connection"}
                   </button>
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Edit Connection Modal */}
-      {editingConnection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#0f1117] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-[#0084ff]/15 text-[#0084ff] flex items-center justify-center shrink-0">
-                  <Pencil className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Edit Connection</h2>
-                  <p className="text-sm text-white/60 mt-0.5">{editingConnection.label}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditingConnection(null)}
-                className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/15 text-white/60 hover:text-white transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-white/80">Display Name</label>
-                <input
-                  value={editLabel}
-                  onChange={(e) => setEditLabel(e.target.value)}
-                  placeholder="e.g. Sharma Jewellers"
-                  className={`mt-1 ${inputClass}`}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-white/80">Meta API Access Token</label>
-                <div className="relative mt-1">
-                  <input
-                    type={editTokenVisible ? "text" : "password"}
-                    value={editAccessToken}
-                    onChange={(e) => setEditAccessToken(e.target.value)}
-                    placeholder="Enter your permanent Meta token..."
-                    className={`w-full h-11 px-3 pr-10 rounded-lg bg-white/[0.08] border border-white/15 text-white placeholder:text-white/40 focus:border-[#0084ff] focus:ring-2 focus:ring-[#0084ff]/30 outline-none text-sm`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setEditTokenVisible((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
-                  >
-                    {editTokenVisible ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                <p className="text-[11px] text-white/40 mt-1.5">
-                  Found in Meta Developer Dashboard → Your App → WhatsApp → API Setup
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-white/80">WhatsApp Business Account ID (WABA ID)</label>
-                <input
-                  value={editWabaId}
-                  onChange={(e) => setEditWabaId(e.target.value)}
-                  placeholder="e.g. 1234567890123456"
-                  className={`mt-1 ${inputClass}`}
-                />
-                <p className="text-[11px] text-white/40 mt-1.5">
-                  Found in Meta Business Manager → WhatsApp → API Setup → WhatsApp Business Account ID
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setEditingConnection(null)}
-                disabled={savingEdit}
-                className="flex-1 h-11 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-semibold transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={savingEdit}
-                className="flex-1 h-11 rounded-lg bg-[#0084ff] hover:bg-[#0066cc] text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {savingEdit ? "Saving…" : "Save"}
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -793,16 +560,16 @@ function LimitReachedModal({ plan, onClose }: { plan: string; onClose: () => voi
 
   const extraHref = extraPrice
     ? `https://wa.me/918989568529?text=${encodeURIComponent(
-      `Hi, I want to add an extra WhatsApp number to my ${planLabel} plan on Replora for ₹${extraPrice}/month`,
-    )}`
+        `Hi, I want to add an extra WhatsApp number to my ${planLabel} plan on Replora for ₹${extraPrice}/month`,
+      )}`
     : `https://wa.me/918989568529?text=${encodeURIComponent(
-      `Hi, I want to add extra WhatsApp numbers on my Agency plan on Replora`,
-    )}`;
+        `Hi, I want to add extra WhatsApp numbers on my Agency plan on Replora`,
+      )}`;
 
   const upgradeHref = upgrade
     ? `https://wa.me/918989568529?text=${encodeURIComponent(
-      `Hi, I want to upgrade to ${upgrade.next} plan on Replora`,
-    )}`
+        `Hi, I want to upgrade to ${upgrade.next} plan on Replora`,
+      )}`
     : null;
 
   return (

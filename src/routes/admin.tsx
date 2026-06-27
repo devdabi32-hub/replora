@@ -3,19 +3,13 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Shield, X, Check, Loader2, Crown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
+import { OWNER_EMAIL } from "@/lib/constants";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <AdminPage />
-    </AppLayout>
-  ),
+  component: AdminPage,
 });
-
-const OWNER_EMAIL = "devdabi32@gmail.com";
 
 type Agency = {
   id: string;

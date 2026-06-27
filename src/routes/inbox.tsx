@@ -1,21 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { supabase, type Message } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useUpgradeModal } from "@/components/UpgradeModal";
 import { usePhoneContext } from "@/contexts/PhoneContext";
-import { toast } from "sonner";
 import {
   Search, Phone, Video, MoreVertical, Smile, Paperclip, Send,
   CheckCheck, Star, Trash2, StickyNote, Lock, MessageCircle, X, ArrowLeft,
-  Bot, User as UserIcon, Loader2,
 } from "lucide-react";
+import { HOT_HOURS, HOT_MIN_MESSAGES, WARM_HOURS, MS_PER_DAY } from "@/lib/constants";
 
-export const Route = createFileRoute("/inbox")({ component: Index });
-
-function Index() { return <AppLayout><InboxPage /></AppLayout>; }
+export const Route = createFileRoute("/inbox")({ component: InboxPage });
 
 type Category = "hot" | "warm" | "cold";
 type FilterKey = "all" | "important" | Category;
@@ -37,25 +33,31 @@ type Conversation = {
   isImportant: boolean;
   notes: Note[];
   lastInboundAt: Date | null;
-  assignedTo?: string | null;
+};
+
+type ContactRow = {
+  phone_number: string;
+  is_important: boolean | null;
+  lead_category: Category | null;
+  notes: Note[] | null;
 };
 
 const CAT: Record<Category, { label: string; emoji: string; cls: string; activeCls: string; dot: string }> = {
-  hot: { label: "Hot", emoji: "🔥", cls: "bg-red-500/15 text-red-300 border-red-500/30", activeCls: "bg-red-500 text-white border-red-500", dot: "bg-red-500" },
-  warm: { label: "Warm", emoji: "🟡", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30", activeCls: "bg-amber-500 text-white border-amber-500", dot: "bg-amber-500" },
-  cold: { label: "Cold", emoji: "🔵", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30", activeCls: "bg-sky-500 text-white border-sky-500", dot: "bg-sky-500" },
+  hot:  { label: "Hot",  emoji: "🔥", cls: "bg-red-500/15 text-red-300 border-red-500/30",       activeCls: "bg-red-500 text-white border-red-500",       dot: "bg-red-500" },
+  warm: { label: "Warm", emoji: "🟡", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30", activeCls: "bg-amber-500 text-white border-amber-500",   dot: "bg-amber-500" },
+  cold: { label: "Cold", emoji: "🔵", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30",       activeCls: "bg-sky-500 text-white border-sky-500",       dot: "bg-sky-500" },
 };
 
 function avatarColor(p: string) {
-  const colors = ["from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600", "from-purple-500 to-pink-600", "from-orange-500 to-red-600", "from-cyan-500 to-blue-600", "from-rose-500 to-pink-600", "from-amber-500 to-orange-600"];
+  const colors = ["from-blue-500 to-indigo-600","from-emerald-500 to-teal-600","from-purple-500 to-pink-600","from-orange-500 to-red-600","from-cyan-500 to-blue-600","from-rose-500 to-pink-600","from-amber-500 to-orange-600"];
   let h = 0; for (const c of p) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return colors[h % colors.length];
 }
 function autoCat(count: number, last: Date | null): Category {
   if (!last) return "cold";
   const hrs = differenceInHours(new Date(), last);
-  if (hrs <= 24 && count >= 5) return "hot";
-  if (hrs <= 72) return "warm";
+  if (hrs <= HOT_HOURS && count >= HOT_MIN_MESSAGES) return "hot";
+  if (hrs <= WARM_HOURS) return "warm";
   return "cold";
 }
 function dayLabel(d: Date) {
@@ -66,13 +68,13 @@ function dayLabel(d: Date) {
 function timeShort(d: Date) {
   if (isToday(d)) return format(d, "HH:mm");
   if (isYesterday(d)) return "Yesterday";
-  const days = (Date.now() - d.getTime()) / 86400000;
+  const days = (Date.now() - d.getTime()) / MS_PER_DAY;
   if (days < 7) return format(d, "EEEE");
   return format(d, "dd/MM/yyyy");
 }
 
 function InboxPage() {
-  const { isExpired } = useAccountStatus();
+  const { isExpired, agencyId } = useAccountStatus();
   const { open: openUpgrade } = useUpgradeModal();
   const { selectedId } = usePhoneContext();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -80,38 +82,30 @@ function InboxPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
-  const [assignFilter, setAssignFilter] = useState<"all" | "mine" | "unassigned">("all");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [teamMembers, setTeamMembers] = useState<{ id: string; full_name: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Human Takeover state
-  const [convRow, setConvRow] = useState<{ id: string; phone_number: string; human_takeover: boolean; status?: string } | null>(null);
-  const [composerText, setComposerText] = useState("");
-  const [sending, setSending] = useState(false);
-  const humanTakeover = !!convRow?.human_takeover;
-
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     if (selectedId) {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .eq("connection_id", selectedId)
+        .eq("phone_number_id", selectedId)
         .order("timestamp", { ascending: false });
       if (!error) { setMessages((data ?? []) as Message[]); setLoading(false); return; }
     }
-    const { data } = await supabase.from("messages").select("*").order("timestamp", { ascending: false });
+    const { data } = await supabase.from("messages").select("*").order("timestamp", { ascending: false }).limit(500);
     setMessages((data ?? []) as Message[]);
     setLoading(false);
-  };
-  const loadContacts = async () => {
+  }, [selectedId]);
+
+  const loadContacts = useCallback(async () => {
     const { data } = await supabase.from("contacts").select("*");
     const map: Record<string, Contact> = {};
-    for (const c of (data ?? []) as any[]) {
+    for (const c of (data ?? []) as ContactRow[]) {
       map[c.phone_number] = {
         phone_number: c.phone_number,
         is_important: !!c.is_important,
@@ -120,27 +114,16 @@ function InboxPage() {
       };
     }
     setContacts(map);
-  };
+  }, []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setCurrentUserId(data.user.id);
-        supabase.from("users").select("agency_id").eq("id", data.user.id).maybeSingle().then(({ data: u }) => {
-          if (u?.agency_id) {
-            supabase.from("users").select("id, full_name").eq("agency_id", u.agency_id)
-              .then(({ data: tm }) => setTeamMembers(tm ?? []));
-          }
-        });
-      }
-    });
     loadMessages(); loadContacts();
     const ch = supabase.channel("inbox-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, loadMessages)
       .on("postgres_changes", { event: "*", schema: "public", table: "contacts" }, loadContacts)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedId, loadMessages, loadContacts]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -158,6 +141,7 @@ function InboxPage() {
       lead_category: next.lead_category,
       notes: next.notes,
       updated_at: new Date().toISOString(),
+      ...(agencyId ? { agency_id: agencyId } : {}),
     });
   };
 
@@ -177,8 +161,13 @@ function InboxPage() {
   };
   const deleteConv = async (phone: string) => {
     setConfirmDelete(null);
-    await supabase.from("messages").delete().eq("phone_number", phone);
-    await supabase.from("contacts").delete().eq("phone_number", phone);
+    if (agencyId) {
+      await supabase.from("messages").delete().eq("phone_number", phone).eq("agency_id", agencyId);
+      await supabase.from("contacts").delete().eq("phone_number", phone).eq("agency_id", agencyId);
+    } else {
+      await supabase.from("messages").delete().eq("phone_number", phone);
+      await supabase.from("contacts").delete().eq("phone_number", phone);
+    }
     setMessages((prev) => prev.filter((m) => m.phone_number !== phone));
     setContacts((prev) => { const n = { ...prev }; delete n[phone]; return n; });
     if (selected === phone) setSelected(null);
@@ -224,14 +213,9 @@ function InboxPage() {
         if (filter === "important") return c.isImportant;
         return (c.category ?? c.autoCategory) === filter;
       })
-      .filter((c) => {
-        if (assignFilter === "mine") return c.assignedTo === currentUserId;
-        if (assignFilter === "unassigned") return !c.assignedTo;
-        return true;
-      })
       .filter((c) => c.phone_number.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0));
-  }, [allConversations, filter, assignFilter, currentUserId, search]);
+  }, [allConversations, filter, search]);
 
   const counts = useMemo(() => {
     const c = { all: allConversations.length, important: 0, hot: 0, warm: 0, cold: 0 };
@@ -253,7 +237,7 @@ function InboxPage() {
     if (!selected) return;
     const unread = messages.filter((m) => m.phone_number === selected && m.direction === "inbound" && m.is_read === false);
     if (!unread.length) return;
-    supabase.from("messages").update({ is_read: true }).in("id", unread.map((u) => u.id)).then(() => { });
+    supabase.from("messages").update({ is_read: true }).in("id", unread.map((u) => u.id)).then(() => {});
   }, [selected, messages]);
 
   useEffect(() => {
@@ -263,98 +247,6 @@ function InboxPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selected, conversationMessages.length]);
-
-  // Fetch + subscribe to the selected conversation row for human_takeover
-  useEffect(() => {
-    setConvRow(null);
-    setComposerText("");
-    if (!selected) return;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        let query = supabase
-          .from("conversations")
-          .select("id, phone_number, human_takeover, status")
-          .eq("phone_number", selected);
-        if (selectedId) query = query.eq("connection_id", selectedId);
-        const { data } = await query.maybeSingle();
-        if (cancelled) return;
-        if (data) {
-          setConvRow(data as any);
-          channel = supabase
-            .channel(`conv-${(data as any).id}`)
-            .on(
-              "postgres_changes",
-              { event: "UPDATE", schema: "public", table: "conversations", filter: `id=eq.${(data as any).id}` },
-              (payload) => {
-                const next = payload.new as any;
-                setConvRow((prev) => (prev ? { ...prev, ...next } : next));
-              },
-            )
-            .subscribe();
-        }
-      } catch (e) {
-        // swallow — never crash the inbox
-        console.error("conversation fetch failed", e);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, [selected, selectedId]);
-
-  const toggleHumanMode = async () => {
-    if (!convRow) {
-      toast.error("Conversation not found yet — please wait a moment");
-      return;
-    }
-    const next = !convRow.human_takeover;
-    setConvRow({ ...convRow, human_takeover: next });
-    try {
-      const { error } = await supabase
-        .from("conversations")
-        .update({ human_takeover: next })
-        .eq("id", convRow.id);
-      if (error) throw error;
-    } catch (e: any) {
-      setConvRow({ ...convRow, human_takeover: !next });
-      toast.error(e?.message ?? "Failed to toggle mode");
-    }
-  };
-
-  const sendHumanMessage = async () => {
-    const text = composerText.trim();
-    if (!text || sending || !selected) return;
-    setSending(true);
-    try {
-      console.log('[send-message] invoking with:', { connection_id: selectedId, phone_number: selected });
-      const { data, error } = await supabase.functions.invoke("send-message", {
-        body: {
-          connection_id: selectedId,
-          phone_number: selected,
-          message_text: text,
-        },
-      });
-      if (error || (data && (data as any).error)) {
-        const code = (data as any)?.error_code;
-        if (code === "NO_ACCESS_TOKEN") {
-          toast.error("Add your Meta API token in Connections → Edit to enable Human Takeover");
-        } else {
-          toast.error((data as any)?.error ?? error?.message ?? "Failed to send message");
-        }
-      } else {
-        setComposerText("");
-      }
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to send message");
-    } finally {
-      setSending(false);
-    }
-  };
 
   const selectedConv = allConversations.find((c) => c.phone_number === selected);
   const selectedContact = selected ? contacts[selected] : undefined;
@@ -394,22 +286,6 @@ function InboxPage() {
           </div>
         </div>
 
-        {/* Assignment filter tabs */}
-        <div className="px-3 pb-1 flex items-center gap-1.5">
-          {(["all", "mine", "unassigned"] as const).map((a) => (
-            <button
-              key={a}
-              onClick={() => setAssignFilter(a)}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium border transition-all flex-shrink-0 ${assignFilter === a
-                ? "bg-[#0084ff]/20 text-[#0084ff] border-[#0084ff]/40"
-                : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
-                }`}
-            >
-              {a === "all" ? "All Chats" : a === "mine" ? "My Chats" : "Unassigned"}
-            </button>
-          ))}
-        </div>
-
         {/* Filter tabs */}
         <div className="px-3 pb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
           {tabs.map((t) => {
@@ -417,8 +293,9 @@ function InboxPage() {
             const count = counts[t.key];
             return (
               <button key={t.key} onClick={() => setFilter(t.key)}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium border transition-all flex-shrink-0 ${isActive ? "bg-[#00A884]/20 text-[#00A884] border-[#00A884]/40" : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
-                  }`}>
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium border transition-all flex-shrink-0 ${
+                  isActive ? "bg-[#00A884]/20 text-[#00A884] border-[#00A884]/40" : "bg-[#202C33] text-[#AEBAC1] border-transparent hover:bg-[#2A3942]"
+                }`}>
                 {t.icon && <span>{t.icon}</span>}
                 <span>{t.label}</span>
                 <span className="text-[10px] opacity-70">{count}</span>
@@ -441,8 +318,9 @@ function InboxPage() {
             return (
               <div key={c.phone_number}
                 onClick={() => setSelected(c.phone_number)}
-                className={`group cursor-pointer flex items-center gap-3 pl-3 pr-3 py-3 border-b border-white/[0.04] transition-colors ${isSel ? "bg-[#2A3942]" : "hover:bg-[#202C33]"
-                  }`}>
+                className={`group cursor-pointer flex items-center gap-3 pl-3 pr-3 py-3 border-b border-white/[0.04] transition-colors ${
+                  isSel ? "bg-[#2A3942]" : "hover:bg-[#202C33]"
+                }`}>
                 <div className="relative flex-shrink-0">
                   <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${avatarColor(c.phone_number)} text-white flex items-center justify-center text-lg font-semibold`}>
                     {initial}
@@ -508,18 +386,6 @@ function InboxPage() {
                 <div className="text-[12px] text-[#8696A0]">{selectedConv.activeToday ? "online" : `last seen ${timeShort(new Date(selectedConv.last.timestamp))}`}</div>
               </div>
               <div className="flex items-center gap-1 text-[#AEBAC1]">
-                <button
-                  onClick={toggleHumanMode}
-                  title={humanTakeover ? "Switch to AI mode" : "Take over from AI"}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors ${
-                    humanTakeover
-                      ? "bg-[#0084ff] text-white border-[#0084ff]"
-                      : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
-                  }`}
-                >
-                  {humanTakeover ? <UserIcon className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
-                  {humanTakeover ? "Human Mode" : "AI Mode"}
-                </button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><Search className="h-5 w-5" /></button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><Phone className="h-5 w-5" /></button>
                 <button className="p-2 hover:bg-white/10 rounded-full"><Video className="h-5 w-5" /></button>
@@ -527,56 +393,24 @@ function InboxPage() {
               </div>
             </div>
 
-            {humanTakeover && (
-              <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-300 text-[12px] font-medium flex-shrink-0">
-                🟡 Human mode active — AI replies are paused for this conversation
-              </div>
-            )}
-
             {/* Toolbar */}
             <div className="px-4 py-2 bg-[#1F2A30] border-b border-black/30 flex items-center gap-2 flex-wrap flex-shrink-0">
               <button onClick={() => toggleStar(selected)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${selectedConv.isImportant ? "bg-amber-400/15 text-amber-300 border-amber-400/40" : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
-                  }`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${
+                  selectedConv.isImportant ? "bg-amber-400/15 text-amber-300 border-amber-400/40" : "bg-[#2A3942] text-[#AEBAC1] border-transparent hover:bg-[#374248]"
+                }`}>
                 <Star className="h-3.5 w-3.5" fill={selectedConv.isImportant ? "currentColor" : "none"} />
                 {selectedConv.isImportant ? "Important" : "Mark important"}
               </button>
-              {/* Assign to agent */}
-              {teamMembers.length > 1 && (
-                <>
-                  <div className="h-5 w-px bg-white/10" />
-                  <span className="text-[11px] text-[#8696A0] font-medium uppercase tracking-wider">Assign:</span>
-                  <select
-                    value={selectedConv?.assignedTo ?? ""}
-                    onChange={async (e) => {
-                      const val = e.target.value || null;
-                      await supabase.from("conversations")
-                        .update({ assigned_to: val })
-                        .eq("phone_number", selected);
-                      setMessages((prev) => prev.map((m) =>
-                        m.phone_number === selected ? { ...m } : m
-                      ));
-                    }}
-                    className="text-[12px] rounded-full px-2 py-1 bg-[#2A3942] text-[#AEBAC1] border border-white/10 focus:outline-none focus:border-[#0084ff]/50"
-                  >
-                    <option value="">Unassigned</option>
-                    {teamMembers.map((tm) => (
-                      <option key={tm.id} value={tm.id}>
-                        {tm.full_name ?? tm.id.slice(0, 8)}
-                        {tm.id === currentUserId ? " (me)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
               <div className="h-5 w-px bg-white/10" />
               <span className="text-[11px] text-[#8696A0] font-medium uppercase tracking-wider">Tag:</span>
-              {(["hot", "warm", "cold"] as Category[]).map((k) => {
+              {(["hot","warm","cold"] as Category[]).map((k) => {
                 const meta = CAT[k]; const active = effectiveCat === k && selectedConv.category === k;
                 return (
                   <button key={k} onClick={() => setTag(selected, active ? null : k)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${active ? meta.activeCls : meta.cls + " hover:opacity-80"
-                      }`}>
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors ${
+                      active ? meta.activeCls : meta.cls + " hover:opacity-80"
+                    }`}>
                     <span>{meta.emoji}</span>{meta.label}
                   </button>
                 );
@@ -614,19 +448,16 @@ function InboxPage() {
                       )}
                       <div className={`flex ${isOut ? "justify-end" : "justify-start"} mb-1`}>
                         <div className={`max-w-[65%] flex flex-col ${isOut ? "items-end" : "items-start"}`}>
-                          <div className={`relative px-3 py-1.5 text-[14px] shadow-sm ${isOut ? "bg-[#005C4B] text-[#E9EDEF] rounded-lg rounded-tr-none" : "bg-[#202C33] text-[#E9EDEF] rounded-lg rounded-tl-none"
-                            }`}>
+                          {isOut && <span className="text-[10px] font-semibold mb-0.5 px-2 text-[#00A884]">AI Agent</span>}
+                          <div className={`relative px-3 py-1.5 text-[14px] shadow-sm ${
+                            isOut ? "bg-[#005C4B] text-[#E9EDEF] rounded-lg rounded-tr-none" : "bg-[#202C33] text-[#E9EDEF] rounded-lg rounded-tl-none"
+                          }`}>
                             <div className="whitespace-pre-wrap break-words leading-snug pr-14">{m.message_text}</div>
                             <div className="float-right -mb-1 ml-2 mt-1 flex items-center gap-1 text-[10px] text-[#8696A0]">
                               <span>{format(new Date(m.timestamp), "HH:mm")}</span>
                               {isOut && <CheckCheck className="h-3 w-3 text-[#53BDEB]" />}
                             </div>
                           </div>
-                          {isOut && (
-                            <span className="text-[10px] mt-0.5 px-2 text-[#8696A0]">
-                              {m.sender_type === "human_agent" ? "Agent" : "AI"}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -686,42 +517,18 @@ function InboxPage() {
                   Upgrade to receive messages →
                 </button>
               </div>
-            ) : humanTakeover ? (
-              <div className="px-4 py-3 bg-[#0B141A] border-t border-black/40 flex items-end gap-2 flex-shrink-0">
-                <textarea
-                  value={composerText}
-                  onChange={(e) => setComposerText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendHumanMessage();
-                    }
-                  }}
-                  placeholder="Type a message..."
-                  rows={1}
-                  style={{ maxHeight: "6.5rem" }}
-                  className="flex-1 resize-none bg-[#2A3942] text-[#E9EDEF] placeholder:text-[#8696A0] text-[14px] rounded-lg px-3 py-2.5 focus:outline-none"
-                />
-                <button
-                  onClick={sendHumanMessage}
-                  disabled={!composerText.trim() || sending}
-                  className="p-3 bg-[#0084ff] hover:bg-[#0084ff]/90 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </button>
-              </div>
             ) : (
-              <div className="px-4 py-3 bg-[#202C33] flex items-center gap-2 flex-shrink-0">
-                <button className="p-2 text-[#8696A0]" disabled><Smile className="h-5 w-5" /></button>
-                <button className="p-2 text-[#8696A0]" disabled><Paperclip className="h-5 w-5" /></button>
-                <div className="flex-1 px-4 py-2.5 rounded-lg bg-[#2A3942] text-[#8696A0] text-[14px] flex items-center gap-2">
-                  <Lock className="h-3.5 w-3.5 text-[#00A884]" />
-                  Monitoring mode — replies sent by AI agent
-                </div>
-                <button className="p-2.5 bg-[#00A884] text-white rounded-full opacity-50 cursor-not-allowed" disabled>
-                  <Send className="h-4 w-4" />
-                </button>
+            <div className="px-4 py-3 bg-[#202C33] flex items-center gap-2 flex-shrink-0">
+              <button className="p-2 text-[#8696A0]" disabled><Smile className="h-5 w-5" /></button>
+              <button className="p-2 text-[#8696A0]" disabled><Paperclip className="h-5 w-5" /></button>
+              <div className="flex-1 px-4 py-2.5 rounded-lg bg-[#2A3942] text-[#8696A0] text-[14px] flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 text-[#00A884]" />
+                Monitoring mode — replies sent by AI agent
               </div>
+              <button className="p-2.5 bg-[#00A884] text-white rounded-full opacity-50 cursor-not-allowed" disabled>
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
             )}
           </>
         ) : (
