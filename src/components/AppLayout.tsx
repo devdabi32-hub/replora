@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Inbox, Users, BookOpen, Plug,
   Headphones, LogOut, Trash2, Tag,
   Settings as SettingsIcon, UserPlus, FileDown,
+  Zap, KanbanSquare, Megaphone, FileText,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { LogoMark } from "@/components/Logo";
@@ -22,8 +23,12 @@ const baseNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
   { to: "/contacts", label: "Contacts", icon: Users },
-  { to: "/api-docs", label: "API Docs", icon: BookOpen },
+  { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
+  { to: "/automations", label: "Automations", icon: Zap },
+  { to: "/broadcasts", label: "Broadcasts", icon: Megaphone },
+  { to: "/templates", label: "Templates", icon: FileText },
   { to: "/connections", label: "Connections", icon: Plug },
+  { to: "/api-docs", label: "API Docs", icon: BookOpen },
 ];
 const pricingNavItem: NavItem = { to: "/pricing", label: "Pricing", icon: Tag };
 
@@ -200,9 +205,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom nav — show first 5 nav items */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0f1117] text-slate-300 flex justify-around py-2 border-t border-white/10">
-        {nav.slice(0, 5).map((n) => {
+        {baseNav.slice(0, 5).map((n) => {
           const Icon = n.icon;
           const active = pathname.startsWith(n.to);
           return (
