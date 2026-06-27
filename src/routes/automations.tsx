@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { usePhoneContext } from "@/contexts/PhoneContext";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
@@ -12,11 +11,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/automations")({
   head: () => ({ meta: [{ title: "Automations — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <AutomationsPage />
-    </AppLayout>
-  ),
+  component: AutomationsPage,
 });
 
 type Provider = "groq" | "gemini" | "openai" | "deepseek" | "claude" | "webhook";
