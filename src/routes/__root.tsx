@@ -104,16 +104,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-const disableDevtools = `(function(){if(typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__==='object'){for(var k in window.__REACT_DEVTOOLS_GLOBAL_HOOK__){if(typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k]==='function')window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k]=function(){};}window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers=new Map();}})();`;
-
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
-        {import.meta.env.PROD && (
-          <script dangerouslySetInnerHTML={{ __html: disableDevtools }} />
-        )}
       </head>
       <body>
         {children}

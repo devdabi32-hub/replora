@@ -1,10 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { KeyRound, Copy, Check, Plug, Sparkles, AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/api-configuration")({
   head: () => ({ meta: [{ title: "API Configuration — Replora" }] }),
+  beforeLoad: () => { throw redirect({ to: "/connections" }); },
   component: ApiConfigPage,
 });
 
