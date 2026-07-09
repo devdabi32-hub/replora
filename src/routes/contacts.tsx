@@ -3,16 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { format, isToday, isThisWeek } from "date-fns";
 import { Search, Users, MessageSquare, ArrowRight } from "lucide-react";
 import { supabase, type Message } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { usePhoneContext } from "@/contexts/PhoneContext";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({ meta: [{ title: "Contacts — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <ContactsPage />
-    </AppLayout>
-  ),
+  component: ContactsPage,
 });
 
 function avatarColor(phone: string) {
@@ -35,7 +30,7 @@ function ContactsPage() {
         const { data, error } = await supabase
           .from("messages")
           .select("*")
-          .eq("connection_id", selectedId)
+          .eq("phone_number_id", selectedId)
           .order("timestamp", { ascending: false });
         if (!error) { setMessages((data ?? []) as Message[]); setLoading(false); return; }
       }
@@ -90,7 +85,7 @@ function ContactsPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by phone number..."
+              placeholder="Search by name or phone number..."
               className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl bg-white/10 border border-transparent focus:bg-white/10 focus:border-[#0084ff] focus:ring-2 focus:ring-blue-500/30 outline-none transition-all"
             />
           </div>

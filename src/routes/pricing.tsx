@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Crown, ArrowUpRight, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 
 export const Route = createFileRoute("/pricing")({
   component: PricingPage,
@@ -84,8 +83,7 @@ function PricingPage() {
   const currentIdx = useMemo(() => ORDER.indexOf(plan), [plan]);
 
   return (
-    <AppLayout>
-      <div className="min-h-screen bg-black text-white px-6 py-10">
+    <div className="min-h-screen bg-black text-white px-6 py-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">Simple, transparent pricing</h1>
@@ -180,6 +178,5 @@ function PricingPage() {
           {loading && <div className="text-center text-white/40 text-xs mt-6">Loading your plan…</div>}
         </div>
       </div>
-    </AppLayout>
   );
 }

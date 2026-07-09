@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { KanbanSquare, Plus, X, IndianRupee, Pencil, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -37,11 +36,7 @@ const EMPTY_FORM = { title: "", contact_id: "", value: "", stage: "", notes: "" 
 
 export const Route = createFileRoute("/pipeline")({
     head: () => ({ meta: [{ title: "Pipeline — Replora" }] }),
-    component: () => (
-        <AppLayout>
-            <PipelinePage />
-        </AppLayout>
-    ),
+    component: PipelinePage,
 });
 
 // ─── Helper ───────────────────────────────────────────────────────────────────

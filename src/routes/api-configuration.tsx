@@ -1,16 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AppLayout } from "@/components/AppLayout";
 import { KeyRound, Copy, Check, Plug, Sparkles, AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/api-configuration")({
   head: () => ({ meta: [{ title: "API Configuration — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <ApiConfigPage />
-    </AppLayout>
-  ),
+  component: ApiConfigPage,
 });
 
 type ApiKey = {
@@ -45,20 +40,10 @@ function ApiConfigPage() {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [generated, setGenerated] = useState<string | null>(null);
-  const [keys, setKeys] = useState<ApiKey[]>(() => {
-    try {
-      const raw = localStorage.getItem("replora_api_keys");
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
+  const [keys, setKeys] = useState<ApiKey[]>([]);
   const [copied, setCopied] = useState(false);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
   const [rowCopied, setRowCopied] = useState<string | null>(null);
-
-  const persist = (next: ApiKey[]) => {
-    setKeys(next);
-    localStorage.setItem("replora_api_keys", JSON.stringify(next));
-  };
 
   const generate = () => {
     if (!name.trim()) { toast.error("Project name required"); return; }
@@ -71,10 +56,10 @@ function ApiConfigPage() {
       created: new Date().toISOString(),
       lastUsed: "Never",
     };
-    persist([row, ...keys]);
+    setKeys((prev) => [row, ...prev]);
     setGenerated(k);
     setName(""); setDesc("");
-    toast.success("API Key generated");
+    toast.success("API Key generated — copy it now, it won't be shown again.");
   };
 
   const copy = async () => {

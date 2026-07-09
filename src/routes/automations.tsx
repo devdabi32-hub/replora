@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { usePhoneContext } from "@/contexts/PhoneContext";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
@@ -12,11 +11,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/automations")({
   head: () => ({ meta: [{ title: "Automations — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <AutomationsPage />
-    </AppLayout>
-  ),
+  component: AutomationsPage,
 });
 
 type Provider = "groq" | "gemini" | "openai" | "deepseek" | "claude" | "webhook";
@@ -235,7 +230,7 @@ function AIEngineTab() {
             <div>
               <label className={labelCls}>Model</label>
               <select value={model} onChange={(e) => setModel(e.target.value)} className={inputCls}>
-                {MODELS[provider].map((m) => <option key={m} value={m} className="bg-[#0d0f17]">{m}</option>)}
+                {(MODELS[provider] ?? []).map((m) => <option key={m} value={m} className="bg-[#0d0f17]">{m}</option>)}
               </select>
             </div>
           )}
@@ -297,8 +292,8 @@ function AIEngineTab() {
           </>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
-          <div>
+        <div className="flex items-center justify-between pt-4 border-t border-white/[0.06] min-w-0">
+          <div className="min-w-0">
             <div className="text-sm font-medium">Auto Reply</div>
             <div className="text-xs text-white/50 mt-0.5">Automatically replies to incoming messages</div>
           </div>
@@ -329,7 +324,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   return (
     <button
       onClick={() => onChange(!on)}
-      className="relative h-6 w-11 rounded-full transition"
+      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
       style={{ background: on ? "#0084ff" : "rgba(255,255,255,0.1)" }}
     >
       <span

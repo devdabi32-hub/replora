@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/lib/supabase";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import {
@@ -12,11 +11,7 @@ import {
 
 export const Route = createFileRoute("/templates")({
   head: () => ({ meta: [{ title: "Templates — Replora" }] }),
-  component: () => (
-    <AppLayout>
-      <TemplatesPage />
-    </AppLayout>
-  ),
+  component: TemplatesPage,
 });
 
 type Connection = {

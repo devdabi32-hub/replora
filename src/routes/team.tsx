@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { AppLayout } from "@/components/AppLayout";
 import { TeamInviteModal } from "@/components/TeamInviteModal";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useUpgradeModal } from "@/components/UpgradeModal";
@@ -13,11 +12,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/team")({
     head: () => ({ meta: [{ title: "Team — Replora" }] }),
-    component: () => (
-        <AppLayout>
-            <TeamPage />
-        </AppLayout>
-    ),
+    component: TeamPage,
 });
 
 interface TeamMember {

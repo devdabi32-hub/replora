@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppLayout } from "@/components/AppLayout";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -309,7 +308,7 @@ function BroadcastsPage() {
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <AppLayout>
+        <>
             <div className="min-h-screen bg-black p-6 space-y-6">
 
                 {/* Approved templates warning */}
@@ -737,7 +736,7 @@ function BroadcastsPage() {
         </div>
     )
 }
-    </AppLayout >
+    </>
   );
 }
 

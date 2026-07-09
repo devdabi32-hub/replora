@@ -4,9 +4,11 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { AppLayout } from "@/components/AppLayout";
 
 import appCss from "../styles.css?url";
 
@@ -102,11 +104,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const disableDevtools = `(function(){if(typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__==='object'){for(var k in window.__REACT_DEVTOOLS_GLOBAL_HOOK__){if(typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k]==='function')window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k]=function(){};}window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers=new Map();}})();`;
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        {import.meta.env.PROD && (
+          <script dangerouslySetInnerHTML={{ __html: disableDevtools }} />
+        )}
       </head>
       <body>
         {children}
@@ -116,12 +123,22 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+const NON_APP_PATHS = ["/", "/login", "/signup", "/onboarding"];
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isApp = !NON_APP_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      {isApp ? (
+        <AppLayout>
+          <Outlet />
+        </AppLayout>
+      ) : (
+        <Outlet />
+      )}
     </QueryClientProvider>
   );
 }
