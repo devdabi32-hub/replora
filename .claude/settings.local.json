@@ -19,7 +19,12 @@
       "Bash(ls -la \"Chat Monitor Hub.zip\")",
       "Bash(powershell *)",
       "Bash(git reset *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(curl *)",
+      "Bash(git rm *)",
+      "Bash(echo \"exit: $?\")",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__execute_sql"
     ]
   }
 }
